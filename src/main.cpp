@@ -28,7 +28,7 @@ int main() {
     }else if(command.substr(0,5) == "type "){
       std::string subcommand_type = command.substr(5);
       if (is_string_included_in_array(builtins,subcommand_type,3)){
-        std::cout << subcommand_type << " is a shell builtin.\n"; 
+        std::cout << subcommand_type << " is a shell builtin\n"; 
       } else{
         std::cout << subcommand_type << ": command not found\n";
       }
