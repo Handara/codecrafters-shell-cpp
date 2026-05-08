@@ -30,7 +30,7 @@ int main() {
       if (is_string_included_in_array(builtins,subcommand_type,3)){
         std::cout << subcommand_type << " is a shell builtin\n"; 
       } else{
-        std::cout << subcommand_type << ": command not found\n";
+        std::cout << subcommand_type << ": not found\n";
       }
     }
     else {
