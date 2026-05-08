@@ -13,7 +13,7 @@ int main() {
       break;
     }else if(command.substr(0,5) == "echo "){
       std::cout << command.substr(5) << std::endl;
-    }else if(command == "exit"){
+    }else {
       std::cout << command << ": command not found\n";
     }
   }
