@@ -71,20 +71,20 @@ int main() {
         while(end != std::string::npos){
           end = command.find(' ', start);
           if (arg_count == 0){
-            last_output += "Arg #" + std::to_string(arg_count) + " (program name): " + command.substr(start,end-start) + "\n";
+            last_output += "Arg #1 (program name): " + command.substr(start,end-start) + "\n";
           }else{
-            std::string arg = command.substr(start,end-start);
-            last_output += "Arg #" + std::to_string(arg_count) + ": " + arg + "\n";
-            argv.push_back(arg.data());
+            last_output += "Arg #" + std::to_string(arg_count+1) + ": " + command.substr(start,end-start) + "\n";
           }
           arg_count++;
+          argv.push_back(command.substr(start,end-start).data());
           start = end + 1;
         }
+        argv.push_back(nullptr);
         std::cout << "Program was passed " << arg_count <<" args (including program name)." << "\n" << last_output ;
         pid_t pid = fork();
         if (pid == 0) {
             // child process
-            std::cout << "Program Signature: " << execv(first_command.c_str(), argv.data()) << "\n";
+            std::cout << execv(found.c_str(), argv.data()) << "\n";
             exit(1);
         } else {
             // parent process 
