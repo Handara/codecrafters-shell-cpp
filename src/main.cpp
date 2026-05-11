@@ -52,7 +52,7 @@ int main() {
 
         std::cout << subcommand_type << " is " << found << "\n";
       }else{
-        std::cout << subcommand_type << ": command not found\n";
+        std::cout << subcommand_type << ": found\n";
       }
     }
     else {
