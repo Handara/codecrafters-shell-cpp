@@ -71,7 +71,7 @@ int main() {
           // last_output += "Arg #" + std::to_string(arg_count) + ": " + command.substr(start,end-start) + "\n";
           arg_count++;
         }
-        std::cout << "Program was passed " << arg_count <<" args (including program name)." << "\n" << last_output;
+        std::cout << "Program was passed " << arg_count <<" args (including program name)." << "\n" /* << last_output */;
       }else{
         std::cout << command << ": command not found\n";
       }
