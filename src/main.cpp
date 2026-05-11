@@ -82,7 +82,6 @@ int main() {
         std::vector<char *>argv;
         for (auto& s : args) argv.push_back(s.data());
         argv.push_back(nullptr);
-        std::cout << "Program was passed " << arg_count <<" args (including program name)." << "\n" << last_output ;
         pid_t pid = fork();
         if (pid == 0) {
             // child process
