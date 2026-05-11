@@ -67,19 +67,22 @@ int main() {
         size_t start = 0;
         size_t end = command.find(' ', start);
         std::string last_output = "";
-        std::vector<char *> argv;
+        std::vector<std::string> args;
         while(end != std::string::npos){
           end = command.find(' ', start);
           if (arg_count == 0){
-            last_output += "Arg #0 (program name): " + command.substr(start,end-start) + "\n";
+            last_output += "Arg #1 (program name): " + command.substr(start,end-start) + "\n";
           }else{
-            last_output += "Arg #" + std::to_string(arg_count) + ": " + command.substr(start,end-start) + "\n";
+            last_output += "Arg #" + std::to_string(arg_count+1) + ": " + command.substr(start,end-start) + "\n";
           }
           arg_count++;
-          argv.push_back(command.substr(start,end-start).data());
+          args.push_back(command.substr(start,end-start));
           start = end + 1;
         }
+        std::vector<char *>argv;
+        for (auto& s : args) argv.push_back(s.data());
         argv.push_back(nullptr);
+        std::cout << "Program was passed " << arg_count <<" args (including program name)." << "\n" << last_output ;
         pid_t pid = fork();
         if (pid == 0) {
             // child process
