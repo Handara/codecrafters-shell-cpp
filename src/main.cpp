@@ -14,15 +14,16 @@ bool is_string_included_in_array(std::string *haystack, std::string needle, size
 std::string find_executable_in_path(std::string executable){
   std::string path_var = std::getenv("PATH");
   size_t start = 0;
-  size_t end = path_var.find(':', start);
+  size_t end = 0;
   std::string curr_path = path_var.substr(start,end-start) + "/" + executable;
-  while (end != std::string::npos){
-    start = end + 1;
+  while (start < path_var.size()){
     end = path_var.find(':', start);
     curr_path = path_var.substr(start,end-start) + "/" + executable;
     if(access(curr_path.c_str(),X_OK)==0){
       return curr_path;
     }
+    if (end == std::string::npos) break;
+    start = end + 1;
   }
 
   return "";
@@ -70,7 +71,7 @@ int main() {
           last_output += "Arg #" + std::to_string(arg_count) + ": " + command.substr(start,end-start) + "\n";
           arg_count++;
         }
-        std::cout << "Program was passed 2 args (including " << first_command << ")." << "\n" << last_output;
+        std::cout << "Program was passed " << arg_count <<" args (including " << first_command << ")." << "\n" << last_output;
       }else{
         std::cout << command << ": command not found\n";
       }
