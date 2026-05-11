@@ -67,7 +67,11 @@ int main() {
         std::string last_output = "";
         while(end != std::string::npos){
           end = command.find(' ', start);
-          last_output += "Arg #" + std::to_string(arg_count) + ": " + command.substr(start,end-start) + "\n";
+          if (arg_count == 0){
+            last_output += "Arg #" + std::to_string(arg_count) + " (program name): " + command.substr(start,end-start) + "\n";
+          }else{
+            last_output += "Arg #" + std::to_string(arg_count) + ": " + command.substr(start,end-start) + "\n";
+          }
           arg_count++;
           start = end + 1;
         }
