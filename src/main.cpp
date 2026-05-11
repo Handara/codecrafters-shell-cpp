@@ -61,15 +61,15 @@ int main() {
       size_t end = command.find(' ', start);
       std::string first_command = command.substr(start, end);
       if(std::string found = find_executable_in_path(first_command); !found.empty()){
-        int arg_count = 1;
+        int arg_count = 0;
         size_t start = 0;
         size_t end = command.find(' ', start);
         std::string last_output = "";
         while(end != std::string::npos){
-          start = end + 1;
           end = command.find(' ', start);
           last_output += "Arg #" + std::to_string(arg_count) + ": " + command.substr(start,end-start) + "\n";
           arg_count++;
+          start = end + 1;
         }
         std::cout << "Program was passed " << arg_count <<" args (including program name)." << "\n" << last_output;
       }else{
