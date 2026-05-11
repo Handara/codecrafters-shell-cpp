@@ -63,14 +63,11 @@ int main() {
       size_t end = command.find(' ', start);
       std::string first_command = command.substr(start, end);
       if(std::string found = find_executable_in_path(first_command); !found.empty()){
-        int arg_count = 0;
         size_t start = 0;
         size_t end = command.find(' ', start);
-        std::string last_output = "";
         std::vector<std::string> args;
         while(end != std::string::npos){
           end = command.find(' ', start);
-          arg_count++;
           args.push_back(command.substr(start,end-start));
           start = end + 1;
         }
