@@ -68,7 +68,7 @@ int main() {
         while(end != std::string::npos){
           start = end + 1;
           end = command.find(' ', start);
-          last_output += "Arg #" + std::to_string(arg_count) + ": " + command.substr(start,end-start) + "\n";
+          // last_output += "Arg #" + std::to_string(arg_count) + ": " + command.substr(start,end-start) + "\n";
           arg_count++;
         }
         std::cout << "Program was passed " << arg_count <<" args (including program name)." << "\n" << last_output;
