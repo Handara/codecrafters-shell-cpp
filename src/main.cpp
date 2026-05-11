@@ -70,11 +70,6 @@ int main() {
         std::vector<std::string> args;
         while(end != std::string::npos){
           end = command.find(' ', start);
-          if (arg_count == 0){
-            last_output += "Arg #0 (program name): " + command.substr(start,end-start) + "\n";
-          }else{
-            last_output += "Arg #" + std::to_string(arg_count) + ": " + command.substr(start,end-start) + "\n";
-          }
           arg_count++;
           args.push_back(command.substr(start,end-start));
           start = end + 1;
