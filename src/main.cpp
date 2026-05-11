@@ -84,7 +84,7 @@ int main() {
         pid_t pid = fork();
         if (pid == 0) {
             // child process
-            execv(found.c_str(), argv.data())
+            execv(found.c_str(), argv.data());
             exit(1);
         } else {
             // parent process 
