@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <cstdlib>
 
 bool is_string_included_in_array(std::string *haystack, std::string needle, size_t size){
   for(int i = 0; i < size; i++){
@@ -75,7 +76,7 @@ int main() {
           arg_count++;
           start = end + 1;
         }
-        std::cout << "Program was passed " << arg_count <<" args (including program name)." << "\n" << last_output;
+        std::cout << "Program was passed " << arg_count <<" args (including program name)." << "\n" << last_output << "Program Signature: "<< std::system(first_command.c_str()) << "\n";
       }else{
         std::cout << command << ": command not found\n";
       }
