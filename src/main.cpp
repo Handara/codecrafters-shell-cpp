@@ -45,9 +45,20 @@ int main() {
     if (command=="exit"){
       break;
     }else if(command.substr(0,5) == "echo "){
-      std::cout << command.substr(5) << std::endl;
+      std::cout << command.substr(5) << std::endl;  
     }else if(command.substr(0,3) == "pwd"){
       std::cout << std::filesystem::current_path().string() << std::endl;
+    }else if (command.substr(0, 3) == "cd ") {
+    std::string path = command.substr(3);
+    if (path == "~") {
+        path = std::getenv("HOME");
+    }
+
+    try {
+        std::filesystem::current_path(path);
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cout << "cd: " << path << ": No such file or directory\n";
+    }
     }
     
     else if(command.substr(0,5) == "type "){
