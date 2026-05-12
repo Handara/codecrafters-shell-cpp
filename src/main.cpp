@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <filesystem>
 #include <cstdlib>
 #include <vector>
 #include <sys/wait.h>
@@ -37,7 +38,7 @@ int main() {
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
   std::string command;
-  std::string builtins[] = {"exit","echo","type"};
+  std::string builtins[] = {"exit","echo","type", "pwd"};
   while(true){
     std::cout << "$ ";
     std::getline(std::cin, command);
@@ -45,10 +46,12 @@ int main() {
       break;
     }else if(command.substr(0,5) == "echo "){
       std::cout << command.substr(5) << std::endl;
-    }else if(command.substr(0,5) == "type "){
+    }else if(command.substr(0,3) == "pwd"){
+      std::cout << std::filesystem::current_path() << std::endl;
+    }
+    
+    else if(command.substr(0,5) == "type "){
       std::string subcommand_type = command.substr(5);
-      
-      
       if (is_string_included_in_array(builtins,subcommand_type,3)){
         std::cout << subcommand_type << " is a shell builtin\n"; 
       }else if(std::string found = find_executable_in_path(subcommand_type); !found.empty()){
