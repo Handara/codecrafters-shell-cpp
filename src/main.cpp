@@ -46,7 +46,7 @@ int main() {
       break;
     }else if(command.substr(0,5) == "echo "){
     }else if(command.substr(0,3) == "pwd"){
-      std::cout << std::filesystem::current_path() << std::endl;
+      std::cout << std::filesystem::current_path().string() << std::endl;
     }
     
     else if(command.substr(0,5) == "type "){
