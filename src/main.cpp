@@ -80,12 +80,13 @@ std::vector<std::string> split_string(std::string to_split, char token){
 
 /* Command methods */
 
-std::string single_quote_parse(std::string string){
+std::vector<std::string> parse_arguments(std::string string){
     bool is_inside_quotes = false;
     bool has_space = false;
     size_t pos = 0;    
     std::string current_word = "";
     char current_char;
+    std::vector<std::string> args;
     for (size_t i = 0; i < string.size(); i++){
         current_char = string.at(i);
         if (current_char == '\''){
@@ -97,7 +98,8 @@ std::string single_quote_parse(std::string string){
             current_word += current_char;
         }else{
             if (!has_space && current_char == ' '){
-                current_word += ' ';
+                args.push_back(current_word);
+                current_word = "";
                 has_space = true;
             }else if(current_char != ' '){
                 current_word += current_char;
@@ -105,7 +107,8 @@ std::string single_quote_parse(std::string string){
             }
         }
     }
-    return current_word;
+    if(!current_word.empty())args.push_back(current_word);
+    return args;
 }
 
 
@@ -124,7 +127,14 @@ void main_loop(){
       break;
     }else if(first_command == "echo"){
       std::string echo_args = command.substr(5);
-      std::cout << single_quote_parse(echo_args)  << std::endl;
+        std::vector<std::string> argv = parse_arguments(echo_args);
+        for (size_t i = 0; i < argv.size(); i++){
+            std::cout << argv[i] ;
+            if (i != argv.size() - 1){
+                std::cout << " " ;
+            }
+        }
+        std::cout << std::endl;
     }
     else if(first_command == "pwd"){
       std::cout << std::filesystem::current_path().string() << std::endl;
@@ -168,9 +178,9 @@ void main_loop(){
         std::vector<char *>argv;
         if (first_command == "cat"){
             std::string cat_args = command.substr(4);
-            std::string parsed_args = single_quote_parse(cat_args);
+            std::vector<std::string> parsed_args = parse_arguments(cat_args);
             argv.push_back(first_command.data());
-            argv.push_back(parsed_args.data());
+            for (auto&arg : parsed_args)argv.push_back(arg.data());
         }else{
             for (auto& s : args) argv.push_back(s.data());
         }
