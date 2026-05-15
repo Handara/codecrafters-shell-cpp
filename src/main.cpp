@@ -163,7 +163,7 @@ void main_loop(){
     }
     
     else if(first_command == "type"){
-      std::string subcommand_type = command.substr(5);
+      std::string subcommand_type = args[1];
       if (is_string_included_in_array(builtins,subcommand_type,builtins->size())){
         std::cout << subcommand_type << " is a shell builtin\n"; 
       }else if(std::string found = find_executable_in_path(subcommand_type); !found.empty()){
@@ -174,27 +174,11 @@ void main_loop(){
       }
     }
     else {
-      size_t start = 0;
-      size_t end = command.find(' ', start);
       if(std::string found = find_executable_in_path(first_command); !found.empty()){
-        size_t start = 0;
-        size_t end = command.find(' ', start);
-        std::vector<std::string> args;
-        while(end != std::string::npos){
-          end = command.find(' ', start);
-          args.push_back(command.substr(start,end-start));
-          start = end + 1;
-        }
+        
         std::vector<char *>argv;
         std::vector<std::string> parsed_args;
-        if (first_command == "cat"){
-            std::string cat_args = command.substr(4);
-            parsed_args = parse_arguments(cat_args);
-            argv.push_back(first_command.data());
-            for (auto&arg : parsed_args)argv.push_back(arg.data());
-        }else{
-            for (auto& s : args) argv.push_back(s.data());
-        }
+        for (auto& s : args) argv.push_back(s.data());
         argv.push_back(nullptr);
         pid_t pid = fork();
         if (pid == 0) {
