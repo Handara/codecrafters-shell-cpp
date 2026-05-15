@@ -39,44 +39,6 @@ std::string find_executable_in_path(std::string executable){
 
 }
 
-void remove_trailing_spaces(std::string& string){
-
-  // remove trailing spaces from start
-  while (string.size() != 0 && string.at(0) == ' '){
-    string.erase(0,1);
-  }
-
-  //remove trailing spaces from end
-  while (string.size() != 0 && string.at(string.size() - 1) == ' '){
-    string.erase(string.size()-1,1);
-  }
-
-}
-
-// split string into args and strip trailing whitespace from args
-std::vector<std::string> split_string(std::string to_split, char token){
-  
-  std::vector<std::string> split_array;
-  size_t start = 0;
-  size_t end = 0;
-  while(start < to_split.size()){
-    //  next occurence of token
-    end = to_split.find(token,start);
-    // if no occurence found, force end to be end of string.
-    if (end == std::string::npos)end = to_split.size();
-    // extract arg
-    std::string stripped_arg = to_split.substr(start,end-start);
-    // remove trailing whitespaces from the arg
-    remove_trailing_spaces(stripped_arg);
-    // if arg is empty string, ignore
-    if (!stripped_arg.empty())split_array.push_back(stripped_arg);
-    // start from next position for next iteration
-    start = end + 1;
-  }
-
-  return split_array;
-
-}
 
 /* Command methods */
 
@@ -147,7 +109,7 @@ std::vector<std::string> parse_arguments(std::string string){
                 current_word += current_char;
             }else{
                 if (!has_space && current_char == ' '){
-                    args.push_back(current_word);
+                    if(!current_word.empty()) args.push_back(current_word);
                     current_word = "";
                     has_space = true;
                 }else if(current_char != ' '){
@@ -172,15 +134,14 @@ void main_loop(){
     std::getline(std::cin, command);
 
     std::vector<std::string> args = parse_arguments(command);
+    if (args.empty()) continue;
     first_command = args[0];
     if (command=="exit"){
       break;
     }else if(first_command == "echo"){
-      std::string echo_args = command.substr(5);
-        std::vector<std::string> argv = parse_arguments(echo_args);
-        for (size_t i = 0; i < argv.size(); i++){
-            std::cout << argv[i] ;
-            if (i != argv.size() - 1){
+        for (size_t i = 1; i < args.size(); i++){
+            std::cout << args[i] ;
+            if (i != args.size() - 1){
                 std::cout << " " ;
             }
         }
@@ -215,7 +176,6 @@ void main_loop(){
     else {
       size_t start = 0;
       size_t end = command.find(' ', start);
-      std::string first_command = command.substr(start, end);
       if(std::string found = find_executable_in_path(first_command); !found.empty()){
         size_t start = 0;
         size_t end = command.find(' ', start);
@@ -247,7 +207,7 @@ void main_loop(){
             waitpid(pid, nullptr, 0);
         }
       }else{
-        std::cout << command.substr(0) << ": command not found\n";
+        std::cout << first_command << ": command not found\n";
       }
     }
   }
