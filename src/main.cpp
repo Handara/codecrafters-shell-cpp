@@ -123,6 +123,7 @@ std::vector<std::string> parse_arguments(std::string string){
                 current_word += '\'';
                 break;
             }
+            is_escaped=false;
             continue;
         }else if (current_char == '"'){
             switch (state)
@@ -224,9 +225,10 @@ void main_loop(){
           start = end + 1;
         }
         std::vector<char *>argv;
+        std::vector<std::string> parsed_args;
         if (first_command == "cat"){
             std::string cat_args = command.substr(4);
-            std::vector<std::string> parsed_args = parse_arguments(cat_args);
+            parsed_args = parse_arguments(cat_args);
             argv.push_back(first_command.data());
             for (auto&arg : parsed_args)argv.push_back(arg.data());
         }else{
