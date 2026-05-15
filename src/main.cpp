@@ -80,7 +80,7 @@ std::vector<std::string> split_string(std::string to_split, char token){
 
 /* Command methods */
 
-void echo_command(std::string& string){
+std::string single_quote_parse(std::string string){
     bool is_inside_quotes = false;
     bool has_space = false;
     size_t pos = 0;    
@@ -105,7 +105,7 @@ void echo_command(std::string& string){
             }
         }
     }
-    std::cout << current_word << std::endl;
+    return current_word;
 }
 
 
@@ -118,15 +118,15 @@ void main_loop(){
     std::cout << "$ ";
     std::getline(std::cin, command);
 
-    
     std::vector<std::string> args = split_string(command,' ');
-
+    first_command = args[0];
     if (command=="exit"){
       break;
-    }else if(args[0] == "echo"){
+    }else if(first_command == "echo"){
       std::string echo_args = command.substr(5);
-      echo_command(echo_args); 
-    }else if(first_command == "pwd"){
+      std::cout << single_quote_parse(echo_args)  << std::endl;
+    }
+    else if(first_command == "pwd"){
       std::cout << std::filesystem::current_path().string() << std::endl;
     }else if (first_command == "cd") {
       std::string path = args[1];
@@ -166,7 +166,14 @@ void main_loop(){
           start = end + 1;
         }
         std::vector<char *>argv;
-        for (auto& s : args) argv.push_back(s.data());
+        if (first_command == "cat"){
+            std::string cat_args = command.substr(4);
+            std::string parsed_args = single_quote_parse(cat_args);
+            argv.push_back(first_command.data());
+            argv.push_back(parsed_args.data());
+        }else{
+            for (auto& s : args) argv.push_back(s.data());
+        }
         argv.push_back(nullptr);
         pid_t pid = fork();
         if (pid == 0) {
