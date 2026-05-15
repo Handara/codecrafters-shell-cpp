@@ -102,6 +102,7 @@ std::vector<std::string> parse_arguments(std::string string){
                 current_word += '\\';
                 current_word += current_char;
             }
+            is_escaped = false;
             continue;
         }
 
