@@ -81,7 +81,9 @@ std::vector<std::string> split_string(std::string to_split, char token){
 /* Command methods */
 
 std::vector<std::string> parse_arguments(std::string string){
-    bool is_inside_quotes = false;
+
+    enum QuoteState { NONE, SINGLE, DOUBLE};
+    QuoteState state = NONE;
     bool has_space = false;
     size_t pos = 0;    
     std::string current_word = "";
@@ -90,20 +92,50 @@ std::vector<std::string> parse_arguments(std::string string){
     for (size_t i = 0; i < string.size(); i++){
         current_char = string.at(i);
         if (current_char == '\''){
-            is_inside_quotes = !is_inside_quotes;
-            has_space = false;
+            switch (state)
+            {
+            case NONE:
+                state = SINGLE;
+                has_space = false;
+                break;
+            case SINGLE:
+                state = NONE;
+                has_space = false;
+                break;
+            case DOUBLE:
+                current_word += '\'';
+                break;
+            }
             continue;
         }
-        if (is_inside_quotes){
-            current_word += current_char;
-        }else{
-            if (!has_space && current_char == ' '){
-                args.push_back(current_word);
-                current_word = "";
-                has_space = true;
-            }else if(current_char != ' '){
-                current_word += current_char;
+        if (current_char == '"'){
+            switch (state)
+            {
+            case NONE:
+                state = DOUBLE;
                 has_space = false;
+                break;
+            case SINGLE:
+                current_word += '"';
+                break;
+            case DOUBLE:
+                state = NONE;
+                has_space = false;
+                break;
+            }
+            continue;
+        }else{
+            if (state != NONE){
+                current_word += current_char;
+            }else{
+                if (!has_space && current_char == ' '){
+                    args.push_back(current_word);
+                    current_word = "";
+                    has_space = true;
+                }else if(current_char != ' '){
+                    current_word += current_char;
+                    has_space = false;
+                }
             }
         }
     }
