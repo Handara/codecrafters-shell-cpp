@@ -96,15 +96,18 @@ std::vector<std::string> parse_arguments(std::string string){
             is_escaped = false;
             continue;
         }else if (is_escaped && state == DOUBLE){
-            if (std::string("$\"\\\n").find(current_char)){
+            if (std::string("$\"\\\n").find(current_char) != std::string::npos){
                 current_word += current_char;
             }else{
-                current_word += '\\' + current_char;
+                current_word += '\\';
+                current_word += current_char;
             }
+            continue;
         }
 
         if (current_char == '\\' && state != SINGLE){
             is_escaped = true; 
+            continue;
         }else if (current_char == '\''){
             switch (state)
             {
@@ -120,6 +123,7 @@ std::vector<std::string> parse_arguments(std::string string){
                 current_word += '\'';
                 break;
             }
+            continue;
         }else if (current_char == '"'){
             switch (state)
             {
