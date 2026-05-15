@@ -81,17 +81,31 @@ std::vector<std::string> split_string(std::string to_split, char token){
 /* Command methods */
 
 std::vector<std::string> parse_arguments(std::string string){
-
     enum QuoteState { NONE, SINGLE, DOUBLE};
     QuoteState state = NONE;
     bool has_space = false;
+    bool is_escaped = false;
     size_t pos = 0;    
     std::string current_word = "";
     char current_char;
     std::vector<std::string> args;
     for (size_t i = 0; i < string.size(); i++){
         current_char = string.at(i);
-        if (current_char == '\''){
+        if (is_escaped && state == NONE){
+            current_word+=current_char;
+            is_escaped = false;
+            continue;
+        }else if (is_escaped && state == DOUBLE){
+            if (std::string("$\"\\\n").find(current_char)){
+                current_word += current_char;
+            }else{
+                current_word += '\\' + current_char;
+            }
+        }
+
+        if (current_char == '\\' && state != SINGLE){
+            is_escaped = true; 
+        }else if (current_char == '\''){
             switch (state)
             {
             case NONE:
@@ -106,9 +120,7 @@ std::vector<std::string> parse_arguments(std::string string){
                 current_word += '\'';
                 break;
             }
-            continue;
-        }
-        if (current_char == '"'){
+        }else if (current_char == '"'){
             switch (state)
             {
             case NONE:
