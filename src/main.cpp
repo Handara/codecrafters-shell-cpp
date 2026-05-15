@@ -171,7 +171,7 @@ void main_loop(){
     std::cout << "$ ";
     std::getline(std::cin, command);
 
-    std::vector<std::string> args = split_string(command,' ');
+    std::vector<std::string> args = parse_arguments(command);
     first_command = args[0];
     if (command=="exit"){
       break;
