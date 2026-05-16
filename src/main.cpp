@@ -65,7 +65,9 @@ char* words_generator(const char* text, int state){
 }
 
 char **custom_auto_complete_function(const char* text, int start, int end){
-  
+
+  rl_attempted_completion_over = 1;
+
   return rl_completion_matches(text, words_generator);
 }
 
