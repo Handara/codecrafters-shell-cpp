@@ -11,8 +11,8 @@
 /** HELPERS  **/ 
 
 
-bool is_string_included_in_array(std::string *haystack, std::string needle, size_t size){
-  for(int i = 0; i < size; i++){
+bool is_string_included_in_array(std::string *haystack, std::string needle){
+  for(int i = 0; i < haystack->size(); i++){
     if (needle == haystack[i]){
       return true;
     }
@@ -38,9 +38,6 @@ std::string find_executable_in_path(std::string executable){
   return "";
 
 }
-
-
-/* Command methods */
 
 std::vector<std::string> parse_arguments(std::string string){
     enum QuoteState { NONE, SINGLE, DOUBLE};
@@ -123,6 +120,7 @@ std::vector<std::string> parse_arguments(std::string string){
     return args;
 }
 
+/* MAIN LOOP */
 
 void main_loop(){
   std::string command;
@@ -135,8 +133,28 @@ void main_loop(){
 
     std::vector<std::string> args = parse_arguments(command);
     if (args.empty()) continue;
+    
     first_command = args[0];
-    if (command=="exit"){
+    int saved_stdout = dup(STDOUT_FILENO);
+    bool is_redirect = false;
+
+    for (size_t i = 0; i < args.size(); i++){
+      if ((args[i] == ">" || args[i] == "1>")&&(i + 1 < args.size())){
+        std::string redirect_file = args[i+1];
+        int fd = open(redirect_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (fd != -1){
+          dup2(fd, STDOUT_FILENO);
+          close(fd);
+          is_redirect = true;
+        }
+        args.erase(args.begin()+i, args.end());
+        break;
+      }
+    }
+
+
+
+    if (first_command=="exit"){
       break;
     }else if(first_command == "echo"){
         for (size_t i = 1; i < args.size(); i++){
@@ -164,7 +182,7 @@ void main_loop(){
     
     else if(first_command == "type"){
       std::string subcommand_type = args[1];
-      if (is_string_included_in_array(builtins,subcommand_type,builtins->size())){
+      if (is_string_included_in_array(builtins,subcommand_type)){
         std::cout << subcommand_type << " is a shell builtin\n"; 
       }else if(std::string found = find_executable_in_path(subcommand_type); !found.empty()){
 
@@ -177,37 +195,11 @@ void main_loop(){
       if(std::string found = find_executable_in_path(first_command); !found.empty()){
         
         std::vector<char *>argv;
-        std::string redirect_file = "";
-        bool is_redirect = false;
-        std::vector<std::string> parsed_args;
-        argv.push_back(args[0].data());
-        for (size_t i = 1 ; i < args.size(); i++) {
-          if (args[i] == "1>" || args[i] == ">" ){
-            is_redirect = true;
-            if (i + 1 < args.size()){
-              redirect_file = args[i+1];
-            }
-            break;
-          } else{
-            argv.push_back(args[i].data());
-          }
-        }
+        for (auto& s : args)argv.push_back(s.data());
         argv.push_back(nullptr);
         pid_t pid = fork();
         if (pid == 0) {
             // child process
-            if (is_redirect && !redirect_file.empty()){
-              int fd = open(redirect_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            
-              if (fd != -1){
-                dup2(fd, STDOUT_FILENO);
-                close(fd);
-              }else{
-                std::cerr << "placeholder err";
-                exit(1);
-              }
-            }
-
             execv(found.c_str(), argv.data());
             exit(1);
         } else {
