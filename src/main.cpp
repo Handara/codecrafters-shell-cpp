@@ -20,6 +20,31 @@ bool is_string_included_in_array(std::string *haystack, std::string needle){
   }
   return false;
 }
+
+std::string exec_completion_from_path(std::string text){
+  std::string path_var = std::getenv("PATH");
+  size_t start = 0;
+  size_t end = 0;
+  std::string curr_path = path_var.substr(start,end-start) + "/";
+  while (start < path_var.size()){
+    end = path_var.find(':', start);
+    curr_path = path_var.substr(start,end-start);
+    std::vector<std::string> files;
+    if (std::filesystem::exists(curr_path) && std::filesystem::is_directory(curr_path)) {
+      for (const auto& entry : std::filesystem::directory_iterator(curr_path)) {
+        std::string filename = entry.path().filename().string();
+        if (filename.find(text) != std::string::npos){
+          return filename;
+        }
+      }
+    }
+    start = end + 1;
+  }
+
+  return "";
+
+}
+
 char* words_generator(const char* text, int state){
   if (state != 0){
     return nullptr;
@@ -32,6 +57,10 @@ char* words_generator(const char* text, int state){
       return strdup(candidate.c_str());
     }
   }
+  std::string result_executable = exec_completion_from_path(text);
+  if (!result_executable.empty()){
+    return strdup(result_executable.c_str());
+  }
   return nullptr;
 }
 
@@ -39,6 +68,7 @@ char **custom_auto_complete_function(const char* text, int start, int end){
   
   return rl_completion_matches(text, words_generator);
 }
+
 
 
 
