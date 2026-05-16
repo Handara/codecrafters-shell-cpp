@@ -6,8 +6,9 @@
 #include <vector>
 #include <sys/wait.h>
 #include <fcntl.h>
-
-
+#include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 /** HELPERS  **/ 
 
 
@@ -19,6 +20,27 @@ bool is_string_included_in_array(std::string *haystack, std::string needle){
   }
   return false;
 }
+char* words_generator(const char* text, int state){
+  if (state != 0){
+    return nullptr;
+  }
+  std::string strtext = text;
+  std::vector<std::string> to_match = {"echo","exit"};
+  std::vector<char*> final_completions = {};
+  for (auto& candidate : to_match){
+    if(candidate.find(text) != std::string::npos){
+      return strdup(candidate.c_str());
+    }
+  }
+  return nullptr;
+}
+
+char **custom_auto_complete_function(const char* text, int start, int end){
+  
+  return rl_completion_matches(text, words_generator);
+}
+
+
 
 std::string find_executable_in_path(std::string executable){
   std::string path_var = std::getenv("PATH");
@@ -127,9 +149,13 @@ void main_loop(){
   std::string first_command;
   std::string args[] = {};
   std::string builtins[] = {"exit","echo","type", "pwd"};
+  rl_bind_key('\t', rl_complete);
+  rl_attempted_completion_function = custom_auto_complete_function;
   while(true){
-    std::cout << "$ ";
-    std::getline(std::cin, command);
+    char* input = readline("$ ");
+    command = input;
+
+    free(input);
     std::vector<std::string> args = parse_arguments(command);
     
     if (args.empty()) continue;
@@ -249,15 +275,15 @@ void main_loop(){
     {
     case STDOUT_REDIR:
       dup2(saved_stdout, STDOUT_FILENO);
-      close(saved_stdout);
       break;
-    case STDERR_REDIR:
+      case STDERR_REDIR:
       dup2(saved_stderr, STDERR_FILENO);
-      close(saved_stderr);
       break;
-    default:
+      default:
       break;
     }
+    close(saved_stdout);
+    close(saved_stderr);
 
   }
 }

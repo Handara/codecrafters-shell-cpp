@@ -9,7 +9,8 @@
                 "-g",
                 "${workspaceFolder}/src/main.cpp",
                 "-o",
-                "${workspaceFolder}/out"
+                "${workspaceFolder}/out",
+                "-lreadline"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
