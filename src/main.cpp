@@ -153,9 +153,29 @@ void main_loop(){
         }
         args.erase(args.begin()+i, args.end());
         break;
+      }else if ((args[i] == ">>" || args[i] == "1>>")&&(i + 1 < args.size())){
+        std::string redirect_file = args[i+1];
+        int fd = open(redirect_file.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+        if (fd != -1){
+          dup2(fd, STDOUT_FILENO);
+          close(fd);
+          redir_type = STDOUT_REDIR;
+        }
+        args.erase(args.begin()+i, args.end());
+        break;
       }else if ((args[i] == "2>")&&(i + 1 < args.size())){
         std::string redirect_file = args[i+1];
         int fd = open(redirect_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (fd != -1){
+          dup2(fd, STDERR_FILENO);
+          close(fd);
+          redir_type = STDERR_REDIR;
+        }
+        args.erase(args.begin()+i, args.end());
+        break;
+      }else if ((args[i] == "2>>")&&(i + 1 < args.size())){
+        std::string redirect_file = args[i+1];
+        int fd = open(redirect_file.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
         if (fd != -1){
           dup2(fd, STDERR_FILENO);
           close(fd);
