@@ -211,6 +211,10 @@ void main_loop(){
         std::cout << first_command << ": command not found\n";
       }
     }
+    if (is_redirect){
+      dup2(saved_stdout, STDOUT_FILENO);
+    }
+    close(saved_stdout);
   }
 }
 int main() {
