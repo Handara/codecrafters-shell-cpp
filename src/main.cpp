@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <vector>
 #include <sys/wait.h>
-
+#include <fcntl.h>
 
 
 /** HELPERS  **/ 
@@ -177,12 +177,37 @@ void main_loop(){
       if(std::string found = find_executable_in_path(first_command); !found.empty()){
         
         std::vector<char *>argv;
+        std::string redirect_file = "";
+        bool is_redirect = false;
         std::vector<std::string> parsed_args;
-        for (auto& s : args) argv.push_back(s.data());
+        argv.push_back(args[0].data());
+        for (size_t i = 1 ; i < args.size(); i++) {
+          if (args[i] == "1>" || args[i] == ">" ){
+            is_redirect = true;
+            if (i + 1 < args.size()){
+              redirect_file = args[i+1];
+            }
+            break;
+          } else{
+            argv.push_back(args[i].data());
+          }
+        }
         argv.push_back(nullptr);
         pid_t pid = fork();
         if (pid == 0) {
             // child process
+            if (is_redirect && !redirect_file.empty()){
+              int fd = open(redirect_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            
+              if (fd != -1){
+                dup2(fd, STDOUT_FILENO);
+                close(fd);
+              }else{
+                std::cerr << "placeholder err";
+                exit(1);
+              }
+            }
+
             execv(found.c_str(), argv.data());
             exit(1);
         } else {
