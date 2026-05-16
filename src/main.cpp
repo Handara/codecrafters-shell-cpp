@@ -130,13 +130,17 @@ void main_loop(){
   while(true){
     std::cout << "$ ";
     std::getline(std::cin, command);
-
     std::vector<std::string> args = parse_arguments(command);
+    
     if (args.empty()) continue;
     
+    enum STDRedirectType{NONE, STDOUT_REDIR, STDERR_REDIR};
+    STDRedirectType redir_type = NONE;
+
     first_command = args[0];
     int saved_stdout = dup(STDOUT_FILENO);
-    bool is_redirect = false;
+    int saved_stderr = dup(STDERR_FILENO);
+
 
     for (size_t i = 0; i < args.size(); i++){
       if ((args[i] == ">" || args[i] == "1>")&&(i + 1 < args.size())){
@@ -145,7 +149,17 @@ void main_loop(){
         if (fd != -1){
           dup2(fd, STDOUT_FILENO);
           close(fd);
-          is_redirect = true;
+          redir_type = STDOUT_REDIR;
+        }
+        args.erase(args.begin()+i, args.end());
+        break;
+      }else if ((args[i] == "2>")&&(i + 1 < args.size())){
+        std::string redirect_file = args[i+1];
+        int fd = open(redirect_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (fd != -1){
+          dup2(fd, STDERR_FILENO);
+          close(fd);
+          redir_type = STDERR_REDIR;
         }
         args.erase(args.begin()+i, args.end());
         break;
@@ -211,10 +225,20 @@ void main_loop(){
         std::cout << first_command << ": command not found\n";
       }
     }
-    if (is_redirect){
+    switch (redir_type)
+    {
+    case STDOUT_REDIR:
       dup2(saved_stdout, STDOUT_FILENO);
+      close(saved_stdout);
+      break;
+    case STDERR_REDIR:
+      dup2(saved_stderr, STDERR_FILENO);
+      close(saved_stderr);
+      break;
+    default:
+      break;
     }
-    close(saved_stdout);
+
   }
 }
 int main() {
