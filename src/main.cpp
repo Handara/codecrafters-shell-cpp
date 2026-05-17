@@ -26,14 +26,14 @@ std::string exec_completion_from_path(std::string text){
   size_t start = 0;
   size_t end = 0;
   std::string curr_path = path_var.substr(start,end-start) + "/";
-  while (start < path_var.size()){
+  while (end != std::string::npos){
     end = path_var.find(':', start);
     curr_path = path_var.substr(start,end-start);
     std::vector<std::string> files;
     if (std::filesystem::exists(curr_path) && std::filesystem::is_directory(curr_path)) {
       for (const auto& entry : std::filesystem::directory_iterator(curr_path)) {
         std::string filename = entry.path().filename().string();
-        if (filename.find(text) != std::string::npos){
+         if (filename.find(text) == 0){
           return filename;
         }
       }
@@ -53,7 +53,7 @@ char* words_generator(const char* text, int state){
   std::vector<std::string> to_match = {"echo","exit"};
   std::vector<char*> final_completions = {};
   for (auto& candidate : to_match){
-    if(candidate.find(text) != std::string::npos){
+    if(candidate.find(text) == 0){
       return strdup(candidate.c_str());
     }
   }
@@ -67,8 +67,9 @@ char* words_generator(const char* text, int state){
 char **custom_auto_complete_function(const char* text, int start, int end){
 
   rl_attempted_completion_over = 1;
-
-  return rl_completion_matches(text, words_generator);
+  char **result = rl_completion_matches(text, words_generator);
+  if (result == nullptr) std::cout<<"\a";
+  return result;
 }
 
 
