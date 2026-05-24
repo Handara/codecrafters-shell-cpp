@@ -21,11 +21,12 @@ bool is_string_included_in_array(std::string *haystack, std::string needle){
   return false;
 }
 
-std::string exec_completion_from_path(std::string text){
+std::vector<std::string> exec_completion_from_path(std::string text){
   std::string path_var = std::getenv("PATH");
   size_t start = 0;
   size_t end = 0;
   std::string curr_path = path_var.substr(start,end-start) + "/";
+  std::vector<std::string> results = {};
   while (end != std::string::npos){
     end = path_var.find(':', start);
     curr_path = path_var.substr(start,end-start);
@@ -34,34 +35,51 @@ std::string exec_completion_from_path(std::string text){
       for (const auto& entry : std::filesystem::directory_iterator(curr_path)) {
         std::string filename = entry.path().filename().string();
          if (filename.find(text) == 0){
-          return filename;
+          results.push_back(filename);
         }
       }
     }
     start = end + 1;
   }
 
-  return "";
+  return results;
 
 }
 
 char* words_generator(const char* text, int state){
-  if (state != 0){
-    return nullptr;
-  }
+  static std::vector<std::string> path_executable = {};
+  static size_t list_range;
+  static std::vector<std::string> results;
+  static size_t builtin_range = 2;
+  static size_t path_range;
   std::string strtext = text;
-  std::vector<std::string> to_match = {"echo","exit"};
-  std::vector<char*> final_completions = {};
-  for (auto& candidate : to_match){
-    if(candidate.find(text) == 0){
-      return strdup(candidate.c_str());
-    }
+  if (state == 5) return nullptr;
+  if (state == 0){
+    path_executable = exec_completion_from_path(text);
+    results = {};
+    list_range = 0;
+    path_range = path_executable.size();
   }
-  std::string result_executable = exec_completion_from_path(text);
-  if (!result_executable.empty()){
-    return strdup(result_executable.c_str());
-  }
+
+  
+  while (list_range < builtin_range){
+      std::vector<std::string> to_match = {"echo","exit"};
+      if(to_match[list_range].find(text) == 0){
+        results.push_back(to_match[list_range]);
+        return strdup(results.at(list_range++).c_str());
+      }
+      list_range++;
+  } 
+  
+  while (list_range < builtin_range + path_range){
+      if(path_executable[list_range - builtin_range].find(text) == 0){
+        results.push_back(path_executable.at(list_range - builtin_range));
+        return strdup(results.at(list_range++ - builtin_range).c_str());
+      }
+      list_range++;
+  } 
   return nullptr;
+  
 }
 
 char **custom_auto_complete_function(const char* text, int start, int end){
