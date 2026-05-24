@@ -66,15 +66,15 @@ char* words_generator(const char* text, int state){
       std::vector<std::string> to_match = {"echo","exit"};
       if(to_match[list_range].find(text) == 0){
         results.push_back(to_match[list_range]);
-        return strdup(results.at(list_range++).c_str());
+        return strdup(results.at(state).c_str());
       }
       list_range++;
   } 
   
   while (list_range < builtin_range + path_range){
       if(path_executable[list_range - builtin_range].find(text) == 0){
-        results.push_back(path_executable.at(list_range - builtin_range));
-        return strdup(results.at(list_range++ - builtin_range).c_str());
+        results.push_back(path_executable.at(list_range++ - builtin_range));
+        return strdup(results.at(state).c_str());
       }
       list_range++;
   } 
@@ -89,9 +89,6 @@ char **custom_auto_complete_function(const char* text, int start, int end){
   if (result == nullptr) std::cout<<"\a";
   return result;
 }
-
-
-
 
 std::string find_executable_in_path(std::string executable){
   std::string path_var = std::getenv("PATH");
