@@ -380,6 +380,12 @@ void main_loop(){
       }else{
         std::cout << subcommand_type << ": not found\n";
       }
+    }else if(first_command == "complete"){
+      std::string subcommand_type = args[1];
+      std::cout << "complete: ";
+      args.erase(args.begin(), args.begin()+2);
+      for (auto& s : args) std::cout << s;
+      std::cout << ": no completion specification\n";
     }
     else {
       if(std::string found = find_executable_in_path(first_command); !found.empty()){
