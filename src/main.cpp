@@ -15,8 +15,8 @@ namespace fs = std::filesystem;
 
 /** HELPERS  **/ 
 
-bool is_string_included_in_array(std::string *haystack, std::string needle){
-  for(int i = 0; i < haystack->size(); i++){
+bool is_string_included_in_array(std::vector<std::string> haystack, std::string needle){
+  for(int i = 0; i < haystack.size(); i++){
     if (needle == haystack[i]){
       return true;
     }
@@ -278,7 +278,7 @@ void main_loop(){
   std::string command;
   std::string first_command;
   std::string args[] = {};
-  std::string builtins[] = {"exit","echo","type", "pwd", "complete"};
+  std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete"};
   rl_bind_key('\t', rl_complete);
   rl_attempted_completion_function = custom_auto_complete_function;
   while(true){
