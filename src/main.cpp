@@ -49,19 +49,39 @@ std::vector<std::string> exec_completion_from_path(std::string text){
 
 }
 
+std::vector<std::string> wd_completions(std::string text){
+  std::vector<std::string> results = {};
+  std::vector<std::string> files;
+  if (fs::exists(fs::current_path()) && fs::is_directory(fs::current_path())) {
+    for (const auto& entry : fs::directory_iterator(fs::current_path())) {
+      std::string filename = entry.path().filename().string();
+        if (filename.find(text) == 0){
+        results.push_back(filename);
+      }
+    }
+  }
+
+  return results;
+
+}
+
 char* words_generator(const char* text, int state){
   static std::vector<std::string> path_executable = {};
+  static std::vector<std::string> wd_files = {};
   static size_t list_range;
   static std::vector<std::string> results;
   static size_t builtin_range = 2;
   static size_t path_range;
+  static size_t wd_range;
   std::string strtext = text;
   if (state == 5) return nullptr;
   if (state == 0){
     path_executable = exec_completion_from_path(text);
+    wd_files = wd_completions(text);
     results = {};
     list_range = 0;
     path_range = path_executable.size();
+    wd_range = wd_files.size();
   }
 
   
@@ -74,12 +94,20 @@ char* words_generator(const char* text, int state){
       list_range++;
   } 
   
-  while (list_range < builtin_range + path_range){
-      if(path_executable[list_range - builtin_range].find(text) == 0){
-        results.push_back(path_executable.at(list_range++ - builtin_range));
-        return strdup(results.at(state).c_str());
-      }
-      list_range++;
+  while (list_range < builtin_range + wd_range){
+    if(wd_files[list_range - builtin_range].find(text) == 0){
+      results.push_back(wd_files.at(list_range++ - builtin_range));
+      return strdup(results.at(state).c_str());
+    }
+    list_range++;
+  } 
+
+  while (list_range < builtin_range + path_range + wd_range){
+    if(path_executable[list_range - builtin_range - wd_range].find(text) == 0){
+      results.push_back(path_executable.at(list_range++ - builtin_range - wd_range));
+      return strdup(results.at(state).c_str());
+    }
+    list_range++;
   } 
   return nullptr;
   
