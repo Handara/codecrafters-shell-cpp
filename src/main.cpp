@@ -129,10 +129,39 @@ char* words_generator(const char* text, int state){
   
 }
 
+char* arguments_generator(const char* text, int state){
+  static std::vector<std::string> wd_files = {};
+  static size_t list_range;
+  static std::vector<std::string> results;
+  static size_t wd_range;
+  std::string strtext = text;
+  if (state == 5) return nullptr;
+  if (state == 0){
+    wd_files = wd_completions(text);
+    results = {};
+    list_range = 0;
+    wd_range = wd_files.size();
+  }
+
+  while (list_range <  wd_range){
+    if(wd_files[list_range].find(text) == 0){
+      results.push_back(wd_files.at(list_range++));
+      return strdup(results.at(state).c_str());
+    }
+    list_range++;
+  } 
+
+  
+  return nullptr;
+  
+}
+
 char **custom_auto_complete_function(const char* text, int start, int end){
 
-  rl_attempted_completion_over = 1;
-  char **result = rl_completion_matches(text, words_generator);
+  rl_attempted_completion_over = 0;
+  char **result;
+  if (start == 0)result = rl_completion_matches(text, words_generator);
+  else result = rl_completion_matches(text, arguments_generator);
   if (result == nullptr) std::cout<<"\a";
   return result;
 }
