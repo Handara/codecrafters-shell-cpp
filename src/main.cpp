@@ -69,6 +69,9 @@ std::vector<std::string> wd_completions(std::string text){
     for (const auto& entry : fs::directory_iterator(fs::current_path()/dir)) {
       std::string filename = entry.path().filename().string();
         if (filename.find(file) == 0){
+          if (entry.is_directory()) {
+            filename += "/";
+          }
         results.push_back(dir  + filename);
       }
     }
