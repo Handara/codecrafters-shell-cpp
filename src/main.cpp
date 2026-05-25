@@ -51,17 +51,30 @@ std::vector<std::string> exec_completion_from_path(std::string text){
 
 std::vector<std::string> wd_completions(std::string text){
   std::vector<std::string> results = {};
-  std::vector<std::string> files;
-  if (fs::exists(fs::current_path()) && fs::is_directory(fs::current_path())) {
-    for (const auto& entry : fs::directory_iterator(fs::current_path())) {
+  std::string dir = "";
+  std::string file = text;
+  size_t start = 0;
+  size_t end = text.find('/');
+  while (end != std::string::npos){
+    start = end + 1;
+    end = text.find('/',start);
+  }
+  if (start != 0){
+    file = text.substr(start,text.size());
+    dir = text.substr(0,start);
+    
+  }
+
+  if (fs::exists(fs::current_path()/dir) && fs::is_directory(fs::current_path()/dir)) {
+    for (const auto& entry : fs::directory_iterator(fs::current_path()/dir)) {
       std::string filename = entry.path().filename().string();
-        if (filename.find(text) == 0){
-        results.push_back(filename);
+        if (filename.find(file) == 0){
+        results.push_back(dir  + filename);
       }
     }
   }
-
-  return results;
+  
+    return results;
 
 }
 
