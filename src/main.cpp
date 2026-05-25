@@ -9,8 +9,11 @@
 #include <stdio.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-/** HELPERS  **/ 
 
+
+namespace fs = std::filesystem;
+
+/** HELPERS  **/ 
 
 bool is_string_included_in_array(std::string *haystack, std::string needle){
   for(int i = 0; i < haystack->size(); i++){
@@ -31,8 +34,8 @@ std::vector<std::string> exec_completion_from_path(std::string text){
     end = path_var.find(':', start);
     curr_path = path_var.substr(start,end-start);
     std::vector<std::string> files;
-    if (std::filesystem::exists(curr_path) && std::filesystem::is_directory(curr_path)) {
-      for (const auto& entry : std::filesystem::directory_iterator(curr_path)) {
+    if (fs::exists(curr_path) && fs::is_directory(curr_path)) {
+      for (const auto& entry : fs::directory_iterator(curr_path)) {
         std::string filename = entry.path().filename().string();
          if (filename.find(text) == 0){
           results.push_back(filename);
@@ -274,7 +277,7 @@ void main_loop(){
         std::cout << std::endl;
     }
     else if(first_command == "pwd"){
-      std::cout << std::filesystem::current_path().string() << std::endl;
+      std::cout << fs::current_path().string() << std::endl;
     }else if (first_command == "cd") {
       std::string path = args[1];
       if (path == "~") {
@@ -282,8 +285,8 @@ void main_loop(){
       }
 
       try {
-          std::filesystem::current_path(path);
-      } catch (const std::filesystem::filesystem_error& e) {
+          fs::current_path(path);
+      } catch (const fs::filesystem_error& e) {
           std::cout << "cd: " << path << ": No such file or directory\n";
       }
     }
