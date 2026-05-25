@@ -161,7 +161,10 @@ char **custom_auto_complete_function(const char* text, int start, int end){
   rl_attempted_completion_over = 0;
   char **result;
   if (start == 0)result = rl_completion_matches(text, words_generator);
-  else result = rl_completion_matches(text, arguments_generator);
+  else{
+    rl_completion_append_character = '\0';
+    result = rl_completion_matches(text, arguments_generator);
+  } 
   if (result == nullptr) std::cout<<"\a";
   return result;
 }
