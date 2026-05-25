@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-
+#include <map>
 
 namespace fs = std::filesystem;
 
@@ -281,6 +281,7 @@ void main_loop(){
   std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete"};
   rl_bind_key('\t', rl_complete);
   rl_attempted_completion_function = custom_auto_complete_function;
+  std::map<std::string, std::string> complete_map;
   while(true){
     char* input = readline("$ ");
     command = input;
@@ -382,10 +383,19 @@ void main_loop(){
       }
     }else if(first_command == "complete"){
       std::string subcommand_type = args[1];
-      std::cout << "complete: ";
       args.erase(args.begin(), args.begin()+2);
-      for (auto& s : args) std::cout << s;
-      std::cout << ": no completion specification\n";
+      if (subcommand_type == "-C" && args.size()==2){
+        complete_map[args[1]] = args[0];
+      }else if(subcommand_type == "-p"){
+        if (complete_map.find(args[0]) == complete_map.end()){
+          std::cout << "complete: ";
+          for (auto& s : args) std::cout << s;
+          std::cout << ": no completion specification\n";
+        }else{
+          std::cout << "complete -C '" << complete_map[args[0]] << "' " << args[0] << "\n";
+        }
+      }
+      
     }
     else {
       if(std::string found = find_executable_in_path(first_command); !found.empty()){
