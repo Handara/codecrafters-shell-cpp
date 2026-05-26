@@ -220,9 +220,11 @@ char* arguments_generator(const char* text, int state){
   static size_t list_range;
   static std::vector<std::string> results;
   static size_t wd_range;
-  std::string completion_first = rl_line_buffer;
-  std::vector<std::string> arguments = parse_arguments(completion_first);
-  completion_first = arguments.at(0);
+  std::string completion_buffer = rl_line_buffer;
+  std::vector<std::string> arguments = parse_arguments(completion_buffer);
+  std::string completion_first = arguments.at(0);
+  setenv("COMP_LINE",completion_buffer.c_str(),1);
+  setenv("COMP_POINT",""+completion_buffer.size(),1);
   if (state == 5) return nullptr;
   if (state == 0){
     if(!complete_map.empty() && complete_map.find(completion_first) != complete_map.end()){
