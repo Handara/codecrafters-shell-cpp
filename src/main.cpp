@@ -54,163 +54,6 @@ std::vector<std::string> exec_completion_from_path(std::string text){
 
 }
 
-std::vector<std::string> wd_completions(std::string text){
-  std::vector<std::string> results = {};
-  std::string dir = "";
-  std::string file = text;
-  size_t start = 0;
-  size_t end = text.find('/');
-  while (end != std::string::npos){
-    start = end + 1;
-    end = text.find('/',start);
-  }
-  if (start != 0){
-    file = text.substr(start,text.size());
-    dir = text.substr(0,start);
-    
-  }
-
-  if (fs::exists(fs::current_path()/dir) && fs::is_directory(fs::current_path()/dir)) {
-    for (const auto& entry : fs::directory_iterator(fs::current_path()/dir)) {
-      std::string filename = entry.path().filename().string();
-        if (filename.find(file) == 0){
-          if (entry.is_directory()) {
-            filename += "/";
-          }
-        results.push_back(dir  + filename);
-      }
-    }
-  }
-  
-    return results;
-
-}
-
-char* words_generator(const char* text, int state){
-  static std::vector<std::string> path_executable = {};
-  static std::vector<std::string> wd_files = {};
-  static size_t list_range;
-  static bool is_completion_script = false;
-  static std::vector<std::string> results;
-  static size_t builtin_range = 2;
-  static size_t path_range;
-  static size_t wd_range;
-  std::string strtext = text;
-  
-  if (state == 5) return nullptr;
-  if (state == 0){
-    if(!complete_map.empty() && complete_map.find(text) != complete_map.end()){
-    std::array<char, 128> buffer;
-    std::string result;
-    FILE* pipe = popen(complete_map.at(text).c_str(),"r");
-    if (!pipe){
-      pclose(pipe);
-    }else{
-      while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
-                    result += buffer.data();
-                }
-      pclose(pipe);
-      return strdup(result.c_str());
-    }
-    }
-    path_executable = exec_completion_from_path(text);
-    wd_files = wd_completions(text);
-    results = {};
-    list_range = 0;
-    path_range = path_executable.size();
-    wd_range = wd_files.size();
-  }
-
-  while (list_range < builtin_range){
-      std::vector<std::string> to_match = {"echo","exit"};
-      if(to_match[list_range].find(text) == 0){
-        results.push_back(to_match[list_range]);
-        return strdup(results.at(state).c_str());
-      }
-      list_range++;
-  } 
-  
-  while (list_range < builtin_range + wd_range){
-    if(wd_files[list_range - builtin_range].find(text) == 0){
-      results.push_back(wd_files.at(list_range++ - builtin_range));
-      return strdup(results.at(state).c_str());
-    }
-    list_range++;
-  } 
-
-  while (list_range < builtin_range + path_range + wd_range){
-    if(path_executable[list_range - builtin_range - wd_range].find(text) == 0){
-      results.push_back(path_executable.at(list_range++ - builtin_range - wd_range));
-      return strdup(results.at(state).c_str());
-    }
-    list_range++;
-  } 
-  return nullptr;
-  
-}
-
-char* arguments_generator(const char* text, int state){
-  static std::vector<std::string> wd_files = {};
-  static size_t list_range;
-  static std::vector<std::string> results;
-  static size_t wd_range;
-  std::string strtext = text;
-  if (state == 5) return nullptr;
-  if (state == 0){
-    wd_files = wd_completions(text);
-    results = {};
-    list_range = 0;
-    wd_range = wd_files.size();
-  }
-
-  while (list_range <  wd_range){
-    if(wd_files[list_range].find(text) == 0){
-      results.push_back(wd_files.at(list_range++));
-      return strdup(results.at(state).c_str());
-    }
-    list_range++;
-  } 
-
-  
-  return nullptr;
-  
-}
-
-char **custom_auto_complete_function(const char* text, int start, int end){
-
-  rl_attempted_completion_over = 0;
-  char **result;
-  if (start == 0)result = rl_completion_matches(text, words_generator);
-  else{
-    result = rl_completion_matches(text, arguments_generator);
-  } 
-  if (result == nullptr) std::cout<<"\a";
-  else{
-    std::string match = result[0];
-    if (!match.empty() && match.back()=='/')rl_completion_append_character = '\0';
-  }
-  return result;
-}
-
-std::string find_executable_in_path(std::string executable){
-  std::string path_var = std::getenv("PATH");
-  size_t start = 0;
-  size_t end = 0;
-  std::string curr_path = path_var.substr(start,end-start) + "/" + executable;
-  while (start < path_var.size()){
-    end = path_var.find(':', start);
-    curr_path = path_var.substr(start,end-start) + "/" + executable;
-    if(access(curr_path.c_str(),X_OK)==0){
-      return curr_path;
-    }
-    if (end == std::string::npos) break;
-    start = end + 1;
-  }
-
-  return "";
-
-}
-
 std::vector<std::string> parse_arguments(std::string string){
     enum QuoteState { NONE, SINGLE, DOUBLE};
     QuoteState state = NONE;
@@ -291,6 +134,165 @@ std::vector<std::string> parse_arguments(std::string string){
     if(!current_word.empty())args.push_back(current_word);
     return args;
 }
+
+std::vector<std::string> wd_completions(std::string text){
+  std::vector<std::string> results = {};
+  std::string dir = "";
+  std::string file = text;
+  size_t start = 0;
+  size_t end = text.find('/');
+  while (end != std::string::npos){
+    start = end + 1;
+    end = text.find('/',start);
+  }
+  if (start != 0){
+    file = text.substr(start,text.size());
+    dir = text.substr(0,start);
+    
+  }
+
+  if (fs::exists(fs::current_path()/dir) && fs::is_directory(fs::current_path()/dir)) {
+    for (const auto& entry : fs::directory_iterator(fs::current_path()/dir)) {
+      std::string filename = entry.path().filename().string();
+        if (filename.find(file) == 0){
+          if (entry.is_directory()) {
+            filename += "/";
+          }
+        results.push_back(dir  + filename);
+      }
+    }
+  }
+  
+    return results;
+
+}
+
+char* words_generator(const char* text, int state){
+  static std::vector<std::string> path_executable = {};
+  static std::vector<std::string> wd_files = {};
+  static size_t list_range;
+  static bool is_completion_script = false;
+  static std::vector<std::string> results;
+  static size_t builtin_range = 2;
+  static size_t path_range;
+  static size_t wd_range;
+  std::string strtext = text;
+  if (state == 5) return nullptr;
+  if (state == 0){
+    path_executable = exec_completion_from_path(text);
+    wd_files = wd_completions(text);
+    results = {};
+    list_range = 0;
+    path_range = path_executable.size();
+    wd_range = wd_files.size();
+  }
+
+  while (list_range < builtin_range){
+      std::vector<std::string> to_match = {"echo","exit"};
+      if(to_match[list_range].find(text) == 0){
+        results.push_back(to_match[list_range]);
+        return strdup(results.at(state).c_str());
+      }
+      list_range++;
+  } 
+  
+  while (list_range < builtin_range + wd_range){
+    if(wd_files[list_range - builtin_range].find(text) == 0){
+      results.push_back(wd_files.at(list_range++ - builtin_range));
+      return strdup(results.at(state).c_str());
+    }
+    list_range++;
+  } 
+
+  while (list_range < builtin_range + path_range + wd_range){
+    if(path_executable[list_range - builtin_range - wd_range].find(text) == 0){
+      results.push_back(path_executable.at(list_range++ - builtin_range - wd_range));
+      return strdup(results.at(state).c_str());
+    }
+    list_range++;
+  } 
+  return nullptr;
+  
+}
+
+char* arguments_generator(const char* text, int state){
+  static std::vector<std::string> wd_files = {};
+  static size_t list_range;
+  static std::vector<std::string> results;
+  static size_t wd_range;
+  std::string completion_text = rl_line_buffer;
+  completion_text = parse_arguments(completion_text).at(0);
+  if (state == 5) return nullptr;
+  if (state == 0){
+    if(!complete_map.empty() && complete_map.find(completion_text) != complete_map.end()){
+    std::array<char, 128> buffer;
+    std::string result;
+    FILE* pipe = popen(complete_map.at(completion_text).c_str(),"r");
+    if (!pipe){
+      pclose(pipe);
+    }else{
+      while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
+                    result += buffer.data();
+                }
+      pclose(pipe);
+      return strdup(result.c_str());
+    }
+    }
+    wd_files = wd_completions(text);
+    results = {};
+    list_range = 0;
+    wd_range = wd_files.size();
+  }
+
+  while (list_range <  wd_range){
+    if(wd_files[list_range].find(text) == 0){
+      results.push_back(wd_files.at(list_range++));
+      return strdup(results.at(state).c_str());
+    }
+    list_range++;
+  } 
+
+  
+  return nullptr;
+  
+}
+
+char **custom_auto_complete_function(const char* text, int start, int end){
+
+  rl_attempted_completion_over = 0;
+  char **result;
+  if (start == 0)result = rl_completion_matches(text, words_generator);
+  else{
+    result = rl_completion_matches(text, arguments_generator);
+  } 
+  if (result == nullptr) std::cout<<"\a";
+  else{
+    std::string match = result[0];
+    if (!match.empty() && match.back()=='/')rl_completion_append_character = '\0';
+  }
+  return result;
+}
+
+std::string find_executable_in_path(std::string executable){
+  std::string path_var = std::getenv("PATH");
+  size_t start = 0;
+  size_t end = 0;
+  std::string curr_path = path_var.substr(start,end-start) + "/" + executable;
+  while (start < path_var.size()){
+    end = path_var.find(':', start);
+    curr_path = path_var.substr(start,end-start) + "/" + executable;
+    if(access(curr_path.c_str(),X_OK)==0){
+      return curr_path;
+    }
+    if (end == std::string::npos) break;
+    start = end + 1;
+  }
+
+  return "";
+
+}
+
+
 
 /* MAIN LOOP */
 
