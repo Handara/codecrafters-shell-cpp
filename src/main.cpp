@@ -237,6 +237,8 @@ char* arguments_generator(const char* text, int state){
       pclose(pipe);
       if (!result.empty() && result.back() == '\n') {
         result.pop_back();
+      }else{
+        return nullptr;
       }
       return strdup(result.c_str());
     }
