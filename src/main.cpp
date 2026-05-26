@@ -220,14 +220,22 @@ char* arguments_generator(const char* text, int state){
   static size_t list_range;
   static std::vector<std::string> results;
   static size_t wd_range;
-  std::string completion_text = rl_line_buffer;
-  completion_text = parse_arguments(completion_text).at(0);
+  std::string completion_first = rl_line_buffer;
+  std::vector<std::string> arguments = parse_arguments(completion_first);
+  completion_first = arguments.at(0);
   if (state == 5) return nullptr;
   if (state == 0){
-    if(!complete_map.empty() && complete_map.find(completion_text) != complete_map.end()){
+    if(!complete_map.empty() && complete_map.find(completion_first) != complete_map.end()){
     std::array<char, 128> buffer;
     std::string result;
-    FILE* pipe = popen(complete_map.at(completion_text).c_str(),"r");
+    std::string prev_word = "";
+    if (std::string(text).empty()) {
+        prev_word = arguments.back();
+    } else if (arguments.size() >= 2) {
+        prev_word = arguments[arguments.size() - 2];
+    }
+    std::string exec_cmd = complete_map.at(completion_first) + " '" + completion_first + "' '" + text + "' '" + prev_word + "'";
+    FILE* pipe = popen(exec_cmd.c_str(),"r");
     if (!pipe){
       pclose(pipe);
     }else{
