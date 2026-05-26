@@ -10,8 +10,13 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <map>
+#include <array>
 
 namespace fs = std::filesystem;
+
+/** GLOBAL VARIABLE **/
+
+static std::map<std::string, std::string> complete_map;
 
 /** HELPERS  **/ 
 
@@ -85,13 +90,29 @@ char* words_generator(const char* text, int state){
   static std::vector<std::string> path_executable = {};
   static std::vector<std::string> wd_files = {};
   static size_t list_range;
+  static bool is_completion_script = false;
   static std::vector<std::string> results;
   static size_t builtin_range = 2;
   static size_t path_range;
   static size_t wd_range;
   std::string strtext = text;
+  
   if (state == 5) return nullptr;
   if (state == 0){
+    if(!complete_map.empty() && complete_map.find(text) != complete_map.end()){
+    std::array<char, 128> buffer;
+    std::string result;
+    FILE* pipe = popen(complete_map.at(text).c_str(),"r");
+    if (!pipe){
+      pclose(pipe);
+    }else{
+      while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
+                    result += buffer.data();
+                }
+      pclose(pipe);
+      return strdup(result.c_str());
+    }
+    }
     path_executable = exec_completion_from_path(text);
     wd_files = wd_completions(text);
     results = {};
@@ -100,7 +121,6 @@ char* words_generator(const char* text, int state){
     wd_range = wd_files.size();
   }
 
-  
   while (list_range < builtin_range){
       std::vector<std::string> to_match = {"echo","exit"};
       if(to_match[list_range].find(text) == 0){
@@ -167,7 +187,7 @@ char **custom_auto_complete_function(const char* text, int start, int end){
   if (result == nullptr) std::cout<<"\a";
   else{
     std::string match = result[0];
-    if (match.back()=='/')rl_completion_append_character = '\0';
+    if (!match.empty() && match.back()=='/')rl_completion_append_character = '\0';
   }
   return result;
 }
@@ -281,7 +301,6 @@ void main_loop(){
   std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete"};
   rl_bind_key('\t', rl_complete);
   rl_attempted_completion_function = custom_auto_complete_function;
-  std::map<std::string, std::string> complete_map;
   while(true){
     char* input = readline("$ ");
     command = input;
