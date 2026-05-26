@@ -235,6 +235,9 @@ char* arguments_generator(const char* text, int state){
                     result += buffer.data();
                 }
       pclose(pipe);
+      if (!result.empty() && result.back() == '\n') {
+        result.pop_back();
+      }
       return strdup(result.c_str());
     }
     }
@@ -242,17 +245,15 @@ char* arguments_generator(const char* text, int state){
     results = {};
     list_range = 0;
     wd_range = wd_files.size();
-  }
-
-  while (list_range <  wd_range){
+  }else{
+    while (list_range <  wd_range){
     if(wd_files[list_range].find(text) == 0){
       results.push_back(wd_files.at(list_range++));
       return strdup(results.at(state).c_str());
     }
     list_range++;
-  } 
-
-  
+    } 
+  }
   return nullptr;
   
 }
