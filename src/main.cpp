@@ -171,7 +171,6 @@ char* words_generator(const char* text, int state){
   static std::vector<std::string> path_executable = {};
   static std::vector<std::string> wd_files = {};
   static size_t list_range;
-  static bool is_completion_script = false;
   static std::vector<std::string> results;
   static size_t builtin_range = 2;
   static size_t path_range;
@@ -244,7 +243,8 @@ char* arguments_generator(const char* text, int state){
       pclose(pipe);
     }else{
       while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
-                    result += buffer.data();
+                    if(buffer.data()=="\n")result += " ";
+                    else result += buffer.data();
                 }
       pclose(pipe);
       if (!result.empty() && result.back() == '\n') {
