@@ -234,6 +234,7 @@ char* arguments_generator(const char* text, int state){
     std::array<char, 128> buffer;
     std::string result;
     std::string prev_word = "";
+    script_completions = {};
     if (std::string(text).empty()) {
         prev_word = arguments.back();
     } else if (arguments.size() >= 2) {
@@ -245,13 +246,12 @@ char* arguments_generator(const char* text, int state){
       pclose(pipe);
     }else{
       while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
-                  if (*buffer.data() == '\n'){
-                    script_completions.push_back(result);
-                    result = "";
-                    continue;
-                  }  
-                  result += buffer.data();
                   
+                  result += buffer.data();
+                  if (!result.empty() && result.back() == '\n') {
+                    result.pop_back();
+                  }
+                  script_completions.push_back(result);
                 }
       pclose(pipe);
       script_completions_range = script_completions.size();
@@ -260,7 +260,8 @@ char* arguments_generator(const char* text, int state){
       }else{
         return nullptr;
       }
-      return strdup(script_completions.at(0).c_str());
+      results.push_back(script_completions.at(list_range++));
+      return strdup(results.at(state).c_str());
     }
     }
     wd_files = wd_completions(text);
@@ -336,7 +337,7 @@ void main_loop(){
   rl_bind_key('\t', rl_complete);
   rl_attempted_completion_function = custom_auto_complete_function;
   while(true){
-    char* input = readline("$ ");
+      char* input = readline("$ ");
     command = input;
 
     free(input);
