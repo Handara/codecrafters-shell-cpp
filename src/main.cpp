@@ -442,7 +442,7 @@ void main_loop(){
       if (subcommand_type == "-C" && args.size()==2){
         complete_map[args[1]] = args[0];
       }else if (subcommand_type == "-r" && args.size()==1 && complete_map.find(args.at(0)) != complete_map.end()){
-        complete_map.erase(args.at(9));
+        complete_map.erase(args.at(0));
       }
       else if(subcommand_type == "-p"){
         if (complete_map.find(args[0]) == complete_map.end()){
