@@ -216,9 +216,11 @@ char* words_generator(const char* text, int state){
 
 char* arguments_generator(const char* text, int state){
   static std::vector<std::string> wd_files = {};
+  static std::vector<std::string> script_completions = {};
   static size_t list_range;
   static std::vector<std::string> results;
   static size_t wd_range;
+  static size_t script_completions_range;
   std::string completion_buffer = rl_line_buffer;
   std::string size_buffer = std::to_string(completion_buffer.size());
 
@@ -243,10 +245,16 @@ char* arguments_generator(const char* text, int state){
       pclose(pipe);
     }else{
       while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
-                    if(buffer.data()=="\n")result += " ";
-                    else result += buffer.data();
+                  if (*buffer.data() == '\n'){
+                    script_completions.push_back(result);
+                    result = "";
+                    continue;
+                  }  
+                  result += buffer.data();
+                  
                 }
       pclose(pipe);
+      script_completions_range = script_completions.size();
       if (!result.empty() && result.back() == '\n') {
         result.pop_back();
       }else{
@@ -260,11 +268,20 @@ char* arguments_generator(const char* text, int state){
     list_range = 0;
     wd_range = wd_files.size();
   }else{
-    while (list_range <  wd_range){
+    while (list_range <  script_completions_range){
+    if(script_completions[list_range].find(text) == 0){
+      results.push_back(script_completions.at(list_range++));
+      return strdup(results.at(state).c_str());
+    }
+    
+    list_range++;
+    } 
+    while (list_range <  wd_range + script_completions_range){
     if(wd_files[list_range].find(text) == 0){
       results.push_back(wd_files.at(list_range++));
       return strdup(results.at(state).c_str());
     }
+    
     list_range++;
     } 
   }
