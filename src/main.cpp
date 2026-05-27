@@ -257,7 +257,7 @@ char* arguments_generator(const char* text, int state){
                 }
       pclose(pipe);
       script_completions_range = script_completions.size();
-      if (!script_completions.empty()) {
+        if (!script_completions.empty()) {
         results.push_back(script_completions.at(list_range++));
         return strdup(results.at(state).c_str());
       }else{
@@ -302,6 +302,7 @@ char **custom_auto_complete_function(const char* text, int start, int end){
   else{
     std::string match = result[0];
     if (!match.empty() && match.back()=='/')rl_completion_append_character = '\0';
+    else rl_completion_append_character = ' ';
   }
   return result;
 }
