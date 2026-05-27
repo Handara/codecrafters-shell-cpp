@@ -260,7 +260,7 @@ char* arguments_generator(const char* text, int state){
       }else{
         return nullptr;
       }
-      return strdup(result.c_str());
+      return strdup(script_completions.at(0).c_str());
     }
     }
     wd_files = wd_completions(text);
