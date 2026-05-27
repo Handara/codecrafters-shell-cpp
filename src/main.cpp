@@ -234,6 +234,7 @@ char* arguments_generator(const char* text, int state){
     std::array<char, 128> buffer;
     std::string result;
     std::string prev_word = "";
+    list_range = 0;
     script_completions = {};
     if (std::string(text).empty()) {
         prev_word = arguments.back();
@@ -252,16 +253,17 @@ char* arguments_generator(const char* text, int state){
                     result.pop_back();
                   }
                   script_completions.push_back(result);
+                  result = "";
                 }
       pclose(pipe);
       script_completions_range = script_completions.size();
-      if (!result.empty() && result.back() == '\n') {
-        result.pop_back();
+      if (!script_completions.empty()) {
+        results.push_back(script_completions.at(list_range++));
+        return strdup(results.at(state).c_str());
       }else{
         return nullptr;
       }
-      results.push_back(script_completions.at(list_range++));
-      return strdup(results.at(state).c_str());
+      
     }
     }
     wd_files = wd_completions(text);
@@ -271,8 +273,7 @@ char* arguments_generator(const char* text, int state){
   }else{
     while (list_range <  script_completions_range){
     if(script_completions[list_range].find(text) == 0){
-      results.push_back(script_completions.at(list_range++));
-      return strdup(results.at(state).c_str());
+      return strdup(script_completions.at(list_range++).c_str());
     }
     
     list_range++;
@@ -287,7 +288,6 @@ char* arguments_generator(const char* text, int state){
     } 
   }
   return nullptr;
-  
 }
 
 char **custom_auto_complete_function(const char* text, int start, int end){
