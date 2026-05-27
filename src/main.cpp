@@ -257,12 +257,14 @@ char* arguments_generator(const char* text, int state){
                 }
       pclose(pipe);
       script_completions_range = script_completions.size();
-        if (!script_completions.empty()) {
-        results.push_back(script_completions.at(list_range++));
-        return strdup(results.at(state).c_str());
-      }else{
-        return nullptr;
+        
+      while (list_range < script_completions_range) {
+        if(script_completions[list_range].find(text) == 0){
+          return strdup(script_completions.at(list_range++).c_str());
+        }
+        list_range++;
       }
+      return nullptr;
       
     }
     }
