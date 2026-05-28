@@ -33,12 +33,12 @@ struct Jobs
       return *this;
   }
   void list_print(size_t job_numbers){
-    bool is_recentest = job_numbers == jobNumber;
     switch (status)
     {
     case RUNNING:
       std::cout << "[" << jobNumber << "]";
-      if (is_recentest) std::cout << "+";
+      if (job_numbers == jobNumber) std::cout << "+";
+      else if (job_numbers - 1 == jobNumber) std::cout << "-";
       std::cout << "  Running                 " << command << "\n";
       break;
     
