@@ -340,9 +340,9 @@ void main_loop(){
   rl_bind_key('\t', rl_complete);
   rl_attempted_completion_function = custom_auto_complete_function;
   while(true){
-      char* input = readline("$ ");
+    char* input = readline("$ ");
     command = input;
-
+    bool is_job = true;
     free(input);
     std::vector<std::string> args = parse_arguments(command);
     
@@ -355,8 +355,10 @@ void main_loop(){
     int saved_stdout = dup(STDOUT_FILENO);
     int saved_stderr = dup(STDERR_FILENO);
 
-
+    is_job = args.at(args.size()-1) == "&";
+    if (is_job) args.pop_back();
     for (size_t i = 0; i < args.size(); i++){
+      
       if ((args[i] == ">" || args[i] == "1>")&&(i + 1 < args.size())){
         std::string redirect_file = args[i+1];
         int fd = open(redirect_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -471,8 +473,8 @@ void main_loop(){
             exit(1);
         } else {
             // parent process 
-            
-            waitpid(pid, nullptr, 0);
+            if (is_job) std::cout << pid << "\n";
+            else waitpid(pid, nullptr, 0);
         }
       }else{
         std::cout << first_command << ": command not found\n";
