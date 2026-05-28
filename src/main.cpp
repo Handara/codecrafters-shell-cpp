@@ -26,13 +26,27 @@ struct Jobs
   size_t jobNumber;
   pid_t pid;
   std::string command;
-  enum {RUNNING, JOBDONE} status;
+  int pidstatus;
+  enum {RUNNING, DONE} status;
   
-  Jobs print(){
+  Jobs& print(){
       std::cout << "[" << jobNumber << "] " << pid << "\n";
       return *this;
   }
   void list_print(size_t job_numbers){
+    pid_t result = waitpid(pid, &pidstatus, WNOHANG);
+    if (result == pid){
+      status = DONE;
+      if (WIFEXITED(status)) {
+          // True if the process exited normally (e.g., return 0; or exit(1);)
+          int exit_code = WEXITSTATUS(status);
+      } 
+      else if (WIFSIGNALED(status)) {
+          // True if the process was murdered by a signal (like a Segfault or kill -9)
+          int signal_number = WTERMSIG(status);
+      }
+    }
+
     switch (status)
     {
     case RUNNING:
@@ -42,7 +56,11 @@ struct Jobs
       std::cout << "  Running                 " << command << "\n";
       break;
     
-    default:
+    case DONE:
+      std::cout << "[" << jobNumber << "]";
+      if (job_numbers == jobNumber) std::cout << "+";
+      else if (job_numbers - 1 == jobNumber) std::cout << "-";
+      std::cout << "  Done                    " << command << "\n";
       break;
     }
   }
@@ -374,7 +392,7 @@ void main_loop(){
   rl_bind_key('\t', rl_complete);
   std::vector<Jobs> jobsList;
   rl_attempted_completion_function = custom_auto_complete_function;
-  while(true){
+  while (true) {
     char* input = readline("$ ");
     command = input;
     bool is_job = false;
