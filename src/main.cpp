@@ -27,7 +27,7 @@ struct Jobs
   pid_t pid;
   std::string command;
   int pidstatus;
-  enum {RUNNING, DONE} status;
+  enum {RUNNING, DONE, REAPED} status;
   
   Jobs& print(){
       std::cout << "[" << jobNumber << "] " << pid << "\n";
@@ -61,6 +61,7 @@ struct Jobs
       if (job_numbers == jobNumber) std::cout << "+";
       else if (job_numbers - 1 == jobNumber) std::cout << "-";
       std::cout << "  Done                 " << command.substr(0,command.size()-2) << "\n";
+      status = REAPED;
       break;
     }
   }
