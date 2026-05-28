@@ -60,7 +60,7 @@ struct Jobs
       std::cout << "[" << jobNumber << "]";
       if (job_numbers == jobNumber) std::cout << "+";
       else if (job_numbers - 1 == jobNumber) std::cout << "-";
-      std::cout << "  Done                 " << command << "\n";
+      std::cout << "  Done                 " << command.substr(0,command.size()-2) << "\n";
       break;
     }
   }
