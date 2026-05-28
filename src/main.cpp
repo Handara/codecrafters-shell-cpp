@@ -413,7 +413,6 @@ void main_loop(){
         }
         std::cout << std::endl;
     }else if(first_command == "jobs"){
-        std::cout << std::endl;
     }
     else if(first_command == "pwd"){
       std::cout << fs::current_path().string() << std::endl;
