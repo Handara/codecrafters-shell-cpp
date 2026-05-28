@@ -336,13 +336,14 @@ void main_loop(){
   std::string command;
   std::string first_command;
   std::string args[] = {};
+  std::size_t job_number = 0;
   std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete", "jobs"};
   rl_bind_key('\t', rl_complete);
   rl_attempted_completion_function = custom_auto_complete_function;
   while(true){
     char* input = readline("$ ");
     command = input;
-    bool is_job = true;
+    bool is_job = false;
     free(input);
     std::vector<std::string> args = parse_arguments(command);
     
@@ -356,7 +357,10 @@ void main_loop(){
     int saved_stderr = dup(STDERR_FILENO);
 
     is_job = args.at(args.size()-1) == "&";
-    if (is_job) args.pop_back();
+    if (is_job){
+      args.pop_back();
+      job_number++;
+    } 
     for (size_t i = 0; i < args.size(); i++){
       
       if ((args[i] == ">" || args[i] == "1>")&&(i + 1 < args.size())){
@@ -473,7 +477,10 @@ void main_loop(){
             exit(1);
         } else {
             // parent process 
-            if (is_job) std::cout << pid << "\n";
+            if (is_job) {
+              std::cout << "[" << job_number << "] " << pid << "\n";
+              job_number--;
+            }
             else waitpid(pid, nullptr, 0);
         }
       }else{
