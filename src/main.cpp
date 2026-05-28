@@ -12,11 +12,44 @@
 #include <map>
 #include <array>
 
+
+
 namespace fs = std::filesystem;
 
 /** GLOBAL VARIABLE **/
 
 static std::map<std::string, std::string> complete_map;
+
+/** CLASS **/
+struct Jobs
+{
+  size_t jobNumber;
+  pid_t pid;
+  std::string command;
+  enum {RUNNING, JOBDONE} status;
+  
+  Jobs print(){
+      std::cout << "[" << jobNumber << "] " << pid << "\n";
+      return *this;
+  }
+  void list_print(size_t job_numbers){
+    bool is_recentest = job_numbers == jobNumber;
+    switch (status)
+    {
+    case RUNNING:
+      std::cout << "[" << jobNumber << "]";
+      if (is_recentest) std::cout << "+";
+      std::cout << "  Running                 " << command << "\n";
+      break;
+    
+    default:
+      break;
+    }
+  }
+
+};
+
+
 
 /** HELPERS  **/ 
 
@@ -339,6 +372,7 @@ void main_loop(){
   std::size_t job_number = 0;
   std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete", "jobs"};
   rl_bind_key('\t', rl_complete);
+  std::vector<Jobs> jobsList;
   rl_attempted_completion_function = custom_auto_complete_function;
   while(true){
     char* input = readline("$ ");
@@ -358,6 +392,8 @@ void main_loop(){
 
     is_job = args.at(args.size()-1) == "&";
     if (is_job){
+      std::string command = "";
+      for (auto& a:args) command += a;
       args.pop_back();
       job_number++;
     } 
@@ -419,6 +455,7 @@ void main_loop(){
         }
         std::cout << std::endl;
     }else if(first_command == "jobs"){
+      for (auto& job : jobsList)job.list_print(job_number);
     }
     else if(first_command == "pwd"){
       std::cout << fs::current_path().string() << std::endl;
@@ -478,8 +515,8 @@ void main_loop(){
         } else {
             // parent process 
             if (is_job) {
-              std::cout << "[" << job_number << "] " << pid << "\n";
-              job_number--;
+              Jobs job{job_number, pid, command, Jobs::RUNNING};
+              jobsList.push_back(job.print());
             }
             else waitpid(pid, nullptr, 0);
         }
