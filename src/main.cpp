@@ -336,7 +336,7 @@ void main_loop(){
   std::string command;
   std::string first_command;
   std::string args[] = {};
-  std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete"};
+  std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete", "jobs"};
   rl_bind_key('\t', rl_complete);
   rl_attempted_completion_function = custom_auto_complete_function;
   while(true){
@@ -411,6 +411,8 @@ void main_loop(){
                 std::cout << " " ;
             }
         }
+        std::cout << std::endl;
+    }else if(first_command == "jobs"){
         std::cout << std::endl;
     }
     else if(first_command == "pwd"){
