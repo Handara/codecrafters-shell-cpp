@@ -33,7 +33,7 @@ struct Jobs
       std::cout << "[" << jobNumber << "] " << pid << "\n";
       return *this;
   }
-  void list_print(size_t job_numbers){
+  void list_print(size_t *job_numbers){
     pid_t result = waitpid(pid, &pidstatus, WNOHANG);
     if (result == pid){
       status = DONE;
@@ -51,16 +51,17 @@ struct Jobs
     {
     case RUNNING:
       std::cout << "[" << jobNumber << "]";
-      if (job_numbers == jobNumber) std::cout << "+";
-      else if (job_numbers - 1 == jobNumber) std::cout << "-";
+      if (*job_numbers == jobNumber) std::cout << "+";
+      else if (*job_numbers - 1 == jobNumber) std::cout << "-";
       std::cout << "  Running                 " << command << "\n";
       break;
     
     case DONE:
       std::cout << "[" << jobNumber << "]";
-      if (job_numbers == jobNumber) std::cout << "+";
-      else if (job_numbers - 1 == jobNumber) std::cout << "-";
+      if (*job_numbers == jobNumber) std::cout << "+";
+      else if (*job_numbers - 1 == jobNumber) std::cout << "-";
       std::cout << "  Done                 " << command.substr(0,command.size()-2) << "\n";
+      *job_numbers--;
       status = REAPED;
       break;
     }
@@ -388,7 +389,8 @@ void main_loop(){
   std::string command;
   std::string first_command;
   std::string args[] = {};
-  std::size_t job_number = 0;
+  std::size_t *job_number;
+  *job_number = 0;
   std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete", "jobs"};
   rl_bind_key('\t', rl_complete);
   std::vector<Jobs> jobsList;
@@ -414,7 +416,7 @@ void main_loop(){
       std::string command = "";
       for (auto& a:args) command += a;
       args.pop_back();
-      job_number++;
+      *job_number++;
     } 
     for (size_t i = 0; i < args.size(); i++){
       
@@ -534,7 +536,7 @@ void main_loop(){
         } else {
             // parent process 
             if (is_job) {
-              Jobs job{job_number, pid, command, Jobs::RUNNING};
+              Jobs job{*job_number, pid, command, Jobs::RUNNING};
               jobsList.push_back(job.print());
             }
             else waitpid(pid, nullptr, 0);
