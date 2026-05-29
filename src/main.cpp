@@ -19,6 +19,7 @@ namespace fs = std::filesystem;
 /** GLOBAL VARIABLE **/
 
 static std::map<std::string, std::string> complete_map;
+enum JobPosition {FIRST, SECOND, OTHER};
 
 /** CLASS **/
 struct Jobs
@@ -27,22 +28,20 @@ struct Jobs
   pid_t pid;
   std::string command;
   int pidstatus;
-  enum {RUNNING, DONE, REAPED} status;
+  enum {RUNNING, DONE} status;
   
   Jobs& print(){
       std::cout << "[" << jobNumber << "] " << pid << "\n";
       return *this;
   }
-  void list_print(size_t *job_numbers){
+  int8_t list_print(JobPosition position){
     pid_t result = waitpid(pid, &pidstatus, WNOHANG);
     if (result == pid){
       status = DONE;
       if (WIFEXITED(status)) {
-          // True if the process exited normally (e.g., return 0; or exit(1);)
           int exit_code = WEXITSTATUS(status);
       } 
       else if (WIFSIGNALED(status)) {
-          // True if the process was murdered by a signal (like a Segfault or kill -9)
           int signal_number = WTERMSIG(status);
       }
     }
@@ -50,21 +49,22 @@ struct Jobs
     switch (status)
     {
     case RUNNING:
+      
       std::cout << "[" << jobNumber << "]";
-      if (*job_numbers == jobNumber) std::cout << "+";
-      else if (*job_numbers - 1 == jobNumber) std::cout << "-";
+      if (position == FIRST) std::cout << "+";
+      else if (position == SECOND) std::cout << "-";
       std::cout << "  Running                 " << command << "\n";
-      break;
+      return 0;
     
     case DONE:
       std::cout << "[" << jobNumber << "]";
-      if (*job_numbers == jobNumber) std::cout << "+";
-      else if (*job_numbers - 1 == jobNumber) std::cout << "-";
+      if (position == FIRST) std::cout << "+";
+      else if (position == SECOND) std::cout << "-";
       std::cout << "  Done                 " << command.substr(0,command.size()-2) << "\n";
-      *job_numbers--;
-      status = REAPED;
-      break;
+      return 1;
     }
+    return 0;
+
   }
 
 };
@@ -389,8 +389,8 @@ void main_loop(){
   std::string command;
   std::string first_command;
   std::string args[] = {};
-  std::size_t *job_number;
-  *job_number = 0;
+  std::size_t job_number = 0;
+  std::size_t *job_ptr = &job_number;
   std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete", "jobs"};
   rl_bind_key('\t', rl_complete);
   std::vector<Jobs> jobsList;
@@ -416,7 +416,7 @@ void main_loop(){
       std::string command = "";
       for (auto& a:args) command += a;
       args.pop_back();
-      *job_number++;
+      job_number++;
     } 
     for (size_t i = 0; i < args.size(); i++){
       
@@ -476,7 +476,20 @@ void main_loop(){
         }
         std::cout << std::endl;
     }else if(first_command == "jobs"){
-      for (auto& job : jobsList)job.list_print(job_number);
+      size_t index = 0;
+      for (auto it = jobsList.begin(); it != jobsList.end();){
+        JobPosition position;
+        if (it == jobsList.end() - 1) position = FIRST;
+        else if (it == jobsList.end() - 2) position = SECOND;
+        else position = OTHER;
+        int8_t job_code = it->list_print(position);
+        if (job_code == 1){
+           job_number--;
+           jobsList.erase(it);
+        }else{
+          it++;
+        }
+      }
     }
     else if(first_command == "pwd"){
       std::cout << fs::current_path().string() << std::endl;
@@ -536,7 +549,7 @@ void main_loop(){
         } else {
             // parent process 
             if (is_job) {
-              Jobs job{*job_number, pid, command, Jobs::RUNNING};
+              Jobs job{job_number, pid, command, Jobs::RUNNING};
               jobsList.push_back(job.print());
             }
             else waitpid(pid, nullptr, 0);
