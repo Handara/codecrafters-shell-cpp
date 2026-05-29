@@ -55,8 +55,8 @@ struct Jobs
         if (position == FIRST) std::cout << "+";
         else if (position == SECOND) std::cout << "-";
         std::cout << "  Running                 " << command << "\n";
-        return 0;
       }
+      return 0;
     
     case DONE:
       std::cout << "[" << jobNumber << "]";
