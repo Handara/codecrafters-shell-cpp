@@ -413,7 +413,7 @@ void main_loop(){
   std::vector<Jobs> jobsList;
   rl_attempted_completion_function = custom_auto_complete_function;
   while (true) {
-    bool reaped = false;
+    bool should_reap = true;
     char* input = readline("$ ");
     command = input;
     bool is_job = false;
@@ -435,6 +435,7 @@ void main_loop(){
       for (auto& a:args) command += a;
       args.pop_back();
       job_number++;
+      should_reap = false;
     } 
     for (size_t i = 0; i < args.size(); i++){
       
@@ -483,9 +484,9 @@ void main_loop(){
 
     if(first_command == "jobs"){
       reap_jobs(jobsList, job_number,true);
+      should_reap = false;
       continue;
-    } 
-    else reap_jobs(jobsList, job_number,false);
+    }  
     if (first_command=="exit"){
       break;
     }
@@ -576,9 +577,9 @@ void main_loop(){
       default:
       break;
     }
+    if (should_reap) reap_jobs(jobsList, job_number, false);
     close(saved_stdout);
     close(saved_stderr);
-
   }
 }
 int main() {
