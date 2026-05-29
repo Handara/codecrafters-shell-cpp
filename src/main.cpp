@@ -434,207 +434,173 @@ void main_loop(){
 
     if (pipes.empty() || pipes[0].empty()) continue;
 
-    if (pipes.size() > 1) {
-      size_t n = pipes.size();
-      std::vector<std::array<int,2>> pipe_fds(n - 1);
-      for (size_t i = 0; i < n - 1; i++) {
-        pipe(pipe_fds[i].data());
+    size_t n = pipes.size();
+    first_command = pipes[0][0];
+    if (n == 1) {
+      auto seg = pipes[0];
+      enum STDRedirectType { NONE, STDOUT_REDIR, STDERR_REDIR };
+      STDRedirectType redir_type = NONE;
+      int saved_stdout = dup(STDOUT_FILENO);
+      int saved_stderr = dup(STDERR_FILENO);
+      for (size_t i = 0; i < seg.size(); i++) {
+        if ((seg[i] == ">" || seg[i] == "1>") && i+1 < seg.size()) {
+          int fd = open(seg[i+1].c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0644);
+          if (fd != -1) { dup2(fd, STDOUT_FILENO); close(fd); redir_type = STDOUT_REDIR; }
+          seg.erase(seg.begin()+i, seg.end()); break;
+        } else if ((seg[i] == ">>" || seg[i] == "1>>") && i+1 < seg.size()) {
+          int fd = open(seg[i+1].c_str(), O_WRONLY|O_CREAT|O_APPEND, 0644);
+          if (fd != -1) { dup2(fd, STDOUT_FILENO); close(fd); redir_type = STDOUT_REDIR; }
+          seg.erase(seg.begin()+i, seg.end()); break;
+        } else if (seg[i] == "2>" && i+1 < seg.size()) {
+          int fd = open(seg[i+1].c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0644);
+          if (fd != -1) { dup2(fd, STDERR_FILENO); close(fd); redir_type = STDERR_REDIR; }
+          seg.erase(seg.begin()+i, seg.end()); break;
+        } else if (seg[i] == "2>>" && i+1 < seg.size()) {
+          int fd = open(seg[i+1].c_str(), O_WRONLY|O_CREAT|O_APPEND, 0644);
+          if (fd != -1) { dup2(fd, STDERR_FILENO); close(fd); redir_type = STDERR_REDIR; }
+          seg.erase(seg.begin()+i, seg.end()); break;
+        }
       }
+      bool handled = true;
+      if (first_command == "exit") {
+        close(saved_stdout); close(saved_stderr);
+        break;
+      } else if (first_command == "jobs") {
+        reap_jobs(jobsList, job_number, true);
+        should_reap = false;
+      } else if (first_command == "cd") {
+        std::string path = seg.size() > 1 ? seg[1] : std::string(std::getenv("HOME"));
+        if (path == "~") path = std::getenv("HOME");
+        try { fs::current_path(path); }
+        catch (const fs::filesystem_error&) {
+          std::cout << "cd: " << path << ": No such file or directory\n";
+        }
+      } else if (first_command == "complete") {
+        std::string subcommand_type = seg[1];
+        seg.erase(seg.begin(), seg.begin()+2);
+        if (subcommand_type == "-C" && seg.size() == 2) {
+          complete_map[seg[1]] = seg[0];
+        } else if (subcommand_type == "-r" && seg.size() == 1 && complete_map.count(seg[0])) {
+          complete_map.erase(seg[0]);
+        } else if (subcommand_type == "-p") {
+          if (!complete_map.count(seg[0])) {
+            std::cout << "complete: ";
+            for (auto& s : seg) std::cout << s;
+            std::cout << ": no completion specification\n";
+          } else {
+            std::cout << "complete -C '" << complete_map[seg[0]] << "' " << seg[0] << "\n";
+          }
+        }
+      } else {
+        handled = false;
+      }
+      switch (redir_type) {
+        case STDOUT_REDIR: dup2(saved_stdout, STDOUT_FILENO); break;
+        case STDERR_REDIR: dup2(saved_stderr, STDERR_FILENO); break;
+        default: break;
+      }
+      close(saved_stdout);
+      close(saved_stderr);
+
+      if (handled) {
+        if (should_reap) reap_jobs(jobsList, job_number, false);
+        continue;
+      }
+    }
+    {
+      std::vector<std::array<int,2>> pipe_fds(n > 1 ? n-1 : 0);
+      for (size_t i = 0; i < pipe_fds.size(); i++) pipe(pipe_fds[i].data());
+
       std::vector<pid_t> pids;
       for (size_t i = 0; i < n; i++) {
-        auto& seg = pipes[i];
+        auto seg = pipes[i];
         if (seg.empty()) continue;
-        std::string found = find_executable_in_path(seg[0]);
-        if (found.empty()) {
-          std::cerr << seg[0] << ": command not found\n";
-          continue;
+        std::string cmd = seg[0];
+        if (n == 1 && !seg.empty() && seg.back() == "&") {
+          is_job = true;
+          seg.pop_back();
+          job_number++;
+          should_reap = false;
         }
-        std::vector<char*> argv;
-        for (auto& s : seg) argv.push_back(s.data());
-        argv.push_back(nullptr);
+
         pid_t pid = fork();
         if (pid == 0) {
           if (i > 0) dup2(pipe_fds[i-1][0], STDIN_FILENO);
-          if (i < n - 1) dup2(pipe_fds[i][1], STDOUT_FILENO);
-          for (size_t j = 0; j < n - 1; j++) {
+          if (i < n-1) dup2(pipe_fds[i][1], STDOUT_FILENO);
+          for (size_t j = 0; j < pipe_fds.size(); j++) {
             close(pipe_fds[j][0]);
             close(pipe_fds[j][1]);
           }
-          execv(found.c_str(), argv.data());
-          exit(1);
+          for (size_t k = 0; k < seg.size(); k++) {
+            if ((seg[k] == ">" || seg[k] == "1>") && k+1 < seg.size()) {
+              int fd = open(seg[k+1].c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0644);
+              if (fd != -1) { dup2(fd, STDOUT_FILENO); close(fd); }
+              seg.erase(seg.begin()+k, seg.end()); break;
+            } else if ((seg[k] == ">>" || seg[k] == "1>>") && k+1 < seg.size()) {
+              int fd = open(seg[k+1].c_str(), O_WRONLY|O_CREAT|O_APPEND, 0644);
+              if (fd != -1) { dup2(fd, STDOUT_FILENO); close(fd); }
+              seg.erase(seg.begin()+k, seg.end()); break;
+            } else if (seg[k] == "2>" && k+1 < seg.size()) {
+              int fd = open(seg[k+1].c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0644);
+              if (fd != -1) { dup2(fd, STDERR_FILENO); close(fd); }
+              seg.erase(seg.begin()+k, seg.end()); break;
+            } else if (seg[k] == "2>>" && k+1 < seg.size()) {
+              int fd = open(seg[k+1].c_str(), O_WRONLY|O_CREAT|O_APPEND, 0644);
+              if (fd != -1) { dup2(fd, STDERR_FILENO); close(fd); }
+              seg.erase(seg.begin()+k, seg.end()); break;
+            }
+          }
+          if (cmd == "echo") {
+            for (size_t k = 1; k < seg.size(); k++) {
+              std::cout << seg[k];
+              if (k != seg.size()-1) std::cout << " ";
+            }
+            std::cout << "\n";
+            exit(0);
+          } else if (cmd == "pwd") {
+            std::cout << fs::current_path().string() << "\n";
+            exit(0);
+          } else if (cmd == "type") {
+            std::vector<std::string> blts = {"exit","echo","type","pwd","complete","jobs"};
+            std::string sub = seg[1];
+            if (is_string_included_in_array(blts, sub))
+              std::cout << sub << " is a shell builtin\n";
+            else if (std::string found = find_executable_in_path(sub); !found.empty())
+              std::cout << sub << " is " << found << "\n";
+            else
+              std::cout << sub << ": not found\n";
+            exit(0);
+          } else {
+            std::string found = find_executable_in_path(cmd);
+            if (found.empty()) {
+              std::cerr << cmd << ": command not found\n";
+              exit(1);
+            }
+            std::vector<char*> argv;
+            for (auto& s : seg) argv.push_back(s.data());
+            argv.push_back(nullptr);
+            execv(found.c_str(), argv.data());
+            exit(1);
+          }
         }
         pids.push_back(pid);
       }
-      for (size_t j = 0; j < n - 1; j++) {
+
+      for (size_t j = 0; j < pipe_fds.size(); j++) {
         close(pipe_fds[j][0]);
         close(pipe_fds[j][1]);
       }
-      for (pid_t pid : pids) waitpid(pid, nullptr, 0);
+
+      if (n == 1 && is_job && !pids.empty()) {
+        Jobs job{job_number, pids[0], command, Jobs::RUNNING};
+        jobsList.push_back(job.print());
+      } else {
+        for (pid_t pid : pids) waitpid(pid, nullptr, 0);
+      }
+
       if (should_reap) reap_jobs(jobsList, job_number, false);
-      continue;
     }
-
-      enum STDRedirectType{NONE, STDOUT_REDIR, STDERR_REDIR};
-    STDRedirectType redir_type = NONE;
-
-
-
-    first_command = args[0];
-    int saved_stdout = dup(STDOUT_FILENO);
-    int saved_stderr = dup(STDERR_FILENO);
-
-    is_job = args.at(args.size()-1) == "&";
-    if (is_job){
-      std::string command = "";
-      for (auto& a:args) command += a;
-      args.pop_back();
-      job_number++;
-      should_reap = false;
-    } 
-    for (size_t i = 0; i < args.size(); i++){
-      
-      if ((args[i] == ">" || args[i] == "1>")&&(i + 1 < args.size())){
-        std::string redirect_file = args[i+1];
-        int fd = open(redirect_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-        if (fd != -1){
-          dup2(fd, STDOUT_FILENO);
-          close(fd);
-          redir_type = STDOUT_REDIR;
-        }
-        args.erase(args.begin()+i, args.end());
-        break;
-      }else if ((args[i] == ">>" || args[i] == "1>>")&&(i + 1 < args.size())){
-        std::string redirect_file = args[i+1];
-        int fd = open(redirect_file.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
-        if (fd != -1){
-          dup2(fd, STDOUT_FILENO);
-          close(fd);
-          redir_type = STDOUT_REDIR;
-        }
-        args.erase(args.begin()+i, args.end());
-        break;
-      }else if ((args[i] == "2>")&&(i + 1 < args.size())){
-        std::string redirect_file = args[i+1];
-        int fd = open(redirect_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-        if (fd != -1){
-          dup2(fd, STDERR_FILENO);
-          close(fd);
-          redir_type = STDERR_REDIR;
-        }
-        args.erase(args.begin()+i, args.end());
-        break;
-      }else if ((args[i] == "2>>")&&(i + 1 < args.size())){
-        std::string redirect_file = args[i+1];
-        int fd = open(redirect_file.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
-        if (fd != -1){
-          dup2(fd, STDERR_FILENO);
-          close(fd);
-          redir_type = STDERR_REDIR;
-        }
-        args.erase(args.begin()+i, args.end());
-        break;
-      }
-    }
-
-    if(first_command == "jobs"){
-      reap_jobs(jobsList, job_number,true);
-      should_reap = false;
-      continue;
-    }  
-    if (first_command=="exit"){
-      break;
-    }
-    else if(first_command == "echo"){
-        for (size_t i = 1; i < args.size(); i++){
-            std::cout << args[i] ;
-            if (i != args.size() - 1){
-                std::cout << " " ;
-            }
-        }
-        std::cout << std::endl;
-    }
-    else if(first_command == "pwd"){
-      std::cout << fs::current_path().string() << std::endl;
-    }else if (first_command == "cd") {
-      std::string path = args[1];
-      if (path == "~") {
-          path = std::getenv("HOME");
-      }
-
-      try {
-          fs::current_path(path);
-      } catch (const fs::filesystem_error& e) {
-          std::cout << "cd: " << path << ": No such file or directory\n";
-      }
-    }
-    
-    else if(first_command == "type"){
-      std::string subcommand_type = args[1];
-      if (is_string_included_in_array(builtins,subcommand_type)){
-        std::cout << subcommand_type << " is a shell builtin\n"; 
-      }else if(std::string found = find_executable_in_path(subcommand_type); !found.empty()){
-
-        std::cout << subcommand_type << " is " << found << "\n";
-      }else{
-        std::cout << subcommand_type << ": not found\n";
-      }
-    }else if(first_command == "complete"){
-      std::string subcommand_type = args[1];
-      args.erase(args.begin(), args.begin()+2);
-      if (subcommand_type == "-C" && args.size()==2){
-        complete_map[args[1]] = args[0];
-      }else if (subcommand_type == "-r" && args.size()==1 && complete_map.find(args.at(0)) != complete_map.end()){
-        complete_map.erase(args.at(0));
-      }
-      else if(subcommand_type == "-p"){
-        if (complete_map.find(args[0]) == complete_map.end()){
-          std::cout << "complete: ";
-          for (auto& s : args) std::cout << s;
-          std::cout << ": no completion specification\n";
-        }else{
-          std::cout << "complete -C '" << complete_map[args[0]] << "' " << args[0] << "\n";
-        }
-      }
-      
-    }
-    else {
-      if(std::string found = find_executable_in_path(first_command); !found.empty()){
-        
-        std::vector<char *>argv;
-        for (auto& s : args)argv.push_back(s.data());
-        argv.push_back(nullptr);
-        pid_t pid = fork();
-        if (pid == 0) {
-            // child process
-            execv(found.c_str(), argv.data());
-            exit(1);
-        } else {
-            // parent process 
-            if (is_job) {
-              Jobs job{job_number, pid, command, Jobs::RUNNING};
-              jobsList.push_back(job.print());
-            }
-            else waitpid(pid, nullptr, 0);
-        }
-      }else{
-        std::cout << first_command << ": command not found\n";
-      }
-    }
-    switch (redir_type)
-    {
-    case STDOUT_REDIR:
-      dup2(saved_stdout, STDOUT_FILENO);
-      break;
-    case STDERR_REDIR:
-      dup2(saved_stderr, STDERR_FILENO);
-      break;
-    default:
-      break;
-    }
-    if (should_reap) reap_jobs(jobsList, job_number, false);
-    close(saved_stdout);
-    close(saved_stderr);
-    }
+  }
 }
 int main() {
   // Flush after every std::cout / std:cerr
