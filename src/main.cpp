@@ -34,7 +34,7 @@ struct Jobs
       std::cout << "[" << jobNumber << "] " << pid << "\n";
       return *this;
   }
-  int8_t list_print(JobPosition position){
+  int8_t list_print(JobPosition position, bool print_running){
     pid_t result = waitpid(pid, &pidstatus, WNOHANG);
     if (result == pid){
       status = DONE;
@@ -50,11 +50,13 @@ struct Jobs
     {
     case RUNNING:
       
-      std::cout << "[" << jobNumber << "]";
-      if (position == FIRST) std::cout << "+";
-      else if (position == SECOND) std::cout << "-";
-      std::cout << "  Running                 " << command << "\n";
-      return 0;
+      if (print_running){
+        std::cout << "[" << jobNumber << "]";
+        if (position == FIRST) std::cout << "+";
+        else if (position == SECOND) std::cout << "-";
+        std::cout << "  Running                 " << command << "\n";
+        return 0;
+      }
     
     case DONE:
       std::cout << "[" << jobNumber << "]";
@@ -381,14 +383,14 @@ std::string find_executable_in_path(std::string executable){
 
 }
 
-void reap_jobs(std::vector<Jobs>& jobsList, size_t &job_number){
+void reap_jobs(std::vector<Jobs>& jobsList, size_t &job_number, bool print_running){
   size_t index = 0;
   for (auto it = jobsList.begin(); it != jobsList.end();){
     JobPosition position;
     if (it == jobsList.end() - 1) position = FIRST;
     else if (jobsList.size() >= 2 && it == jobsList.end() - 2) position = SECOND;
     else position = OTHER;
-    int8_t job_code = it->list_print(position);
+    int8_t job_code = it->list_print(position, print_running);
     if (job_code == 1){
         job_number--;
         it = jobsList.erase(it);
@@ -479,8 +481,11 @@ void main_loop(){
       }
     }
 
-
-    reap_jobs(jobsList, job_number);
+    if(first_command == "jobs"){
+      reap_jobs(jobsList, job_number,true);
+      continue;
+    } 
+    else reap_jobs(jobsList, job_number,false);
     if (first_command=="exit"){
       break;
     }
