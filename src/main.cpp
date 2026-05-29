@@ -432,9 +432,48 @@ void main_loop(){
     pipes.push_back(args_temp);
     
 
-    if (pipes.empty()) continue;
-    
-    for (auto & args : pipes){
+    if (pipes.empty() || pipes[0].empty()) continue;
+
+    if (pipes.size() > 1) {
+      size_t n = pipes.size();
+      std::vector<std::array<int,2>> pipe_fds(n - 1);
+      for (size_t i = 0; i < n - 1; i++) {
+        pipe(pipe_fds[i].data());
+      }
+      std::vector<pid_t> pids;
+      for (size_t i = 0; i < n; i++) {
+        auto& seg = pipes[i];
+        if (seg.empty()) continue;
+        std::string found = find_executable_in_path(seg[0]);
+        if (found.empty()) {
+          std::cerr << seg[0] << ": command not found\n";
+          continue;
+        }
+        std::vector<char*> argv;
+        for (auto& s : seg) argv.push_back(s.data());
+        argv.push_back(nullptr);
+        pid_t pid = fork();
+        if (pid == 0) {
+          if (i > 0) dup2(pipe_fds[i-1][0], STDIN_FILENO);
+          if (i < n - 1) dup2(pipe_fds[i][1], STDOUT_FILENO);
+          for (size_t j = 0; j < n - 1; j++) {
+            close(pipe_fds[j][0]);
+            close(pipe_fds[j][1]);
+          }
+          execv(found.c_str(), argv.data());
+          exit(1);
+        }
+        pids.push_back(pid);
+      }
+      for (size_t j = 0; j < n - 1; j++) {
+        close(pipe_fds[j][0]);
+        close(pipe_fds[j][1]);
+      }
+      for (pid_t pid : pids) waitpid(pid, nullptr, 0);
+      if (should_reap) reap_jobs(jobsList, job_number, false);
+      continue;
+    }
+
       enum STDRedirectType{NONE, STDOUT_REDIR, STDERR_REDIR};
     STDRedirectType redir_type = NONE;
 
@@ -586,17 +625,16 @@ void main_loop(){
     case STDOUT_REDIR:
       dup2(saved_stdout, STDOUT_FILENO);
       break;
-      case STDERR_REDIR:
+    case STDERR_REDIR:
       dup2(saved_stderr, STDERR_FILENO);
       break;
-      default:
+    default:
       break;
     }
     if (should_reap) reap_jobs(jobsList, job_number, false);
     close(saved_stdout);
     close(saved_stderr);
     }
-  }
 }
 int main() {
   // Flush after every std::cout / std:cerr
