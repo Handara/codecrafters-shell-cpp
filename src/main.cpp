@@ -38,11 +38,11 @@ struct Jobs
     pid_t result = waitpid(pid, &pidstatus, WNOHANG);
     if (result == pid){
       status = DONE;
-      if (WIFEXITED(status)) {
-          int exit_code = WEXITSTATUS(status);
+      if (WIFEXITED(pidstatus)) {
+          int exit_code = WEXITSTATUS(pidstatus);
       } 
-      else if (WIFSIGNALED(status)) {
-          int signal_number = WTERMSIG(status);
+      else if (WIFSIGNALED(pidstatus)) {
+          int signal_number = WTERMSIG(pidstatus);
       }
     }
 
