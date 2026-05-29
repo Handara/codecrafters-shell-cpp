@@ -418,12 +418,27 @@ void main_loop(){
     command = input;
     bool is_job = false;
     free(input);
+    std::vector<std::vector<std::string>> pipes; 
     std::vector<std::string> args = parse_arguments(command);
+    std::vector<std::string> args_temp;
+    for (auto it = args.begin(); it != args.end(); it++){
+      if (*it == "|"){
+        pipes.push_back(args_temp);
+        args_temp.clear();
+      }else{
+        args_temp.push_back(*it);
+      }
+    }
+    pipes.push_back(args_temp);
     
-    if (args.empty()) continue;
+
+    if (pipes.empty()) continue;
     
-    enum STDRedirectType{NONE, STDOUT_REDIR, STDERR_REDIR};
+    for (auto & args : pipes){
+      enum STDRedirectType{NONE, STDOUT_REDIR, STDERR_REDIR};
     STDRedirectType redir_type = NONE;
+
+
 
     first_command = args[0];
     int saved_stdout = dup(STDOUT_FILENO);
@@ -580,6 +595,7 @@ void main_loop(){
     if (should_reap) reap_jobs(jobsList, job_number, false);
     close(saved_stdout);
     close(saved_stderr);
+    }
   }
 }
 int main() {
