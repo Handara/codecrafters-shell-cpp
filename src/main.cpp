@@ -381,7 +381,22 @@ std::string find_executable_in_path(std::string executable){
 
 }
 
-
+void reap_jobs(std::vector<Jobs>& jobsList, size_t &job_number){
+  size_t index = 0;
+  for (auto it = jobsList.begin(); it != jobsList.end();){
+    JobPosition position;
+    if (it == jobsList.end() - 1) position = FIRST;
+    else if (jobsList.size() >= 2 && it == jobsList.end() - 2) position = SECOND;
+    else position = OTHER;
+    int8_t job_code = it->list_print(position);
+    if (job_code == 1){
+        job_number--;
+        it = jobsList.erase(it);
+    }else{
+      it++;
+    }
+  }
+}
 
 /* MAIN LOOP */
 
@@ -396,6 +411,7 @@ void main_loop(){
   std::vector<Jobs> jobsList;
   rl_attempted_completion_function = custom_auto_complete_function;
   while (true) {
+    bool reaped = false;
     char* input = readline("$ ");
     command = input;
     bool is_job = false;
@@ -464,10 +480,11 @@ void main_loop(){
     }
 
 
-
+    reap_jobs(jobsList, job_number);
     if (first_command=="exit"){
       break;
-    }else if(first_command == "echo"){
+    }
+    else if(first_command == "echo"){
         for (size_t i = 1; i < args.size(); i++){
             std::cout << args[i] ;
             if (i != args.size() - 1){
@@ -475,21 +492,6 @@ void main_loop(){
             }
         }
         std::cout << std::endl;
-    }else if(first_command == "jobs"){
-      size_t index = 0;
-      for (auto it = jobsList.begin(); it != jobsList.end();){
-        JobPosition position;
-        if (it == jobsList.end() - 1) position = FIRST;
-        else if (it == jobsList.end() - 2) position = SECOND;
-        else position = OTHER;
-        int8_t job_code = it->list_print(position);
-        if (job_code == 1){
-           job_number--;
-           jobsList.erase(it);
-        }else{
-          it++;
-        }
-      }
     }
     else if(first_command == "pwd"){
       std::cout << fs::current_path().string() << std::endl;
