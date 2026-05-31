@@ -507,6 +507,11 @@ void main_loop(){
         close(saved_stdout); close(saved_stderr);
         break;
       }else if (first_command == "declare") {
+        auto is_valid_identifier = [](const std::string& name) {
+          if (name.empty() || (!std::isalpha(name[0]) && name[0] != '_')) return false;
+          for (char c : name) if (!std::isalnum(c) && c != '_') return false;
+          return true;
+        };
         if (args.size() > 2 ){
           if (args.at(1) == "-p"){
             if(declare_map.count(args.at(2))) std::cout << "declare -- " << args.at(2) << "=\"" << declare_map[args.at(2)] << "\"\n";
@@ -514,10 +519,14 @@ void main_loop(){
             continue;
           }
         }else if(args.size() == 2 && args.at(1).find('=') != std::string::npos){
-          size_t substr_split_index = args.at(1).find('=');
-          std::string key = args.at(1).substr(0,substr_split_index);
-          std::string value = args.at(1).substr(substr_split_index+1);
-          declare_map[key] = value;
+          std::string token = args.at(1);
+          size_t eq = token.find('=');
+          std::string key = token.substr(0, eq);
+          if (!is_valid_identifier(key)) {
+            std::cout << "declare: `" << token << "': not a valid identifier\n";
+          } else {
+            declare_map[key] = token.substr(eq + 1);
+          }
         }
 
       }else if (first_command == "history") {
