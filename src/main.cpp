@@ -22,6 +22,7 @@ namespace fs = std::filesystem;
 static std::map<std::string, std::string> complete_map;
 enum JobPosition {FIRST, SECOND, OTHER};
 static size_t history_index = 0;
+static size_t history_written = 0;
 static std::vector<std::string> history;
 
 /** CLASS **/
@@ -507,7 +508,8 @@ void main_loop(){
           continue;
         }else if(args.size() > 2 && args.at(1) == "-a"){
           std::ofstream file(args.at(2).c_str(),std::ios::app);
-          for (auto it = history.begin(); it != history.end(); it++)file << *it << "\n";
+          for (size_t i = history_written; i < history.size(); i++) file << history[i] << "\n";
+          history_written = history.size();
           continue;
         }
         size_t startfrom = history.size();
