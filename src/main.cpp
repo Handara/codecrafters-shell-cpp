@@ -81,7 +81,7 @@ struct Jobs
 
 /** HELPERS  **/ 
 
-bool is_string_included_in_array(std::vector<std::string> haystack, std::string needle){
+bool is_string_included_in_array(std::vector<std::string> &haystack, std::string &needle){
   for(int i = 0; i < haystack.size(); i++){
     if (needle == haystack[i]){
       return true;
