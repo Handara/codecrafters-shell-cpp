@@ -474,7 +474,6 @@ void main_loop(){
         for (auto it = history.begin(); it != history.end();){
           std::cout << index++ << " " << *it++ << "\n";
         }
-        break;
       } else if (first_command == "jobs") {
         reap_jobs(jobsList, job_number, true);
         should_reap = false;
