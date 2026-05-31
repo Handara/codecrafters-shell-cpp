@@ -408,7 +408,7 @@ void main_loop(){
   std::string args[] = {};
   std::size_t job_number = 0;
   std::size_t *job_ptr = &job_number;
-  std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete", "jobs"};
+  std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete", "jobs", "history"};
   rl_bind_key('\t', rl_complete);
   std::vector<Jobs> jobsList;
   rl_attempted_completion_function = custom_auto_complete_function;
