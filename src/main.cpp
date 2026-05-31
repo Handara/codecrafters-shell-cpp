@@ -507,10 +507,19 @@ void main_loop(){
         close(saved_stdout); close(saved_stderr);
         break;
       }else if (first_command == "declare") {
-        if (args.size() > 2 && args.at(1) == "-p"){
-          std::cout << "declare: " << args.at(2) << ": not found\n";
-          continue;
+        if (args.size() > 2 ){
+          if (args.at(1) == "-p"){
+            if(declare_map.count(args.at(2))) std::cout << "declare -x " << args.at(2) << "=\"" << declare_map[args.at(2)] << "\"\n";
+            else std::cout << "declare: " << args.at(2) << ": not found\n";
+            continue;
           }
+        }else if(args.size() == 2 && args.at(1).find('=') != std::string::npos){
+          size_t substr_split_index = args.at(1).find('=');
+          std::string key = args.at(1).substr(0,substr_split_index);
+          std::string value = args.at(1).substr(substr_split_index+1);
+          declare_map[key] = value;
+        }
+
       }else if (first_command == "history") {
         if (args.size() > 2 && args.at(1) == "-r"){
           std::ifstream file(args.at(2).c_str());
