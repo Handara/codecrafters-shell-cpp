@@ -440,7 +440,7 @@ void main_loop(){
   rl_attempted_completion_function = custom_auto_complete_function;
   const char* histfile_env = std::getenv("HISTFILE");
   if(histfile_env && *histfile_env){
-    std::ifstream file(histfile_env);
+    std::ifstream file(histfile_env,std::ios::app);
     std::string line;
     while (std::getline(file, line)) {
         history.push_back(line);
