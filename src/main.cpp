@@ -11,6 +11,7 @@
 #include <readline/history.h>
 #include <map>
 #include <array>
+#include <iomanip>
 
 
 
@@ -470,22 +471,15 @@ void main_loop(){
         close(saved_stdout); close(saved_stderr);
         break;
       } else if (first_command == "history") {
-        size_t index = 1;
-        size_t startfrom = 0;
+        size_t startfrom = history.size();
         if (args.size() == 2){
-          try
-          {
-            startfrom = std::stoi(args.at(1));
-            index += startfrom;
-          }
-          catch(const std::exception& e)
-          {
-            std::cerr << e.what() << '\n';
-          }
-          
+          try { startfrom = std::stoi(args.at(1)); }
+          catch(const std::exception& e) { std::cerr << e.what() << '\n'; }
         }
-        for (auto it = history.end() - startfrom; it != history.end();){
-          std::cout << index++ << " " << *it++ << "\n";
+        if (startfrom > history.size()) startfrom = history.size();
+        size_t index = history.size() - startfrom + 1;
+        for (auto it = history.end() - startfrom; it != history.end(); it++){
+          std::cout << std::setw(5) << index++ << "  " << *it << "\n";
         }
       } else if (first_command == "jobs") {
         reap_jobs(jobsList, job_number, true);
