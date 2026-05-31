@@ -501,6 +501,11 @@ void main_loop(){
       }
       bool handled = true;
       if (first_command == "exit") {
+        std::ifstream file(histfile_env);
+        std::string line;
+        while (std::getline(file, line)) {
+            history.push_back(line);
+        }
         close(saved_stdout); close(saved_stderr);
         break;
       } else if (first_command == "history") {
