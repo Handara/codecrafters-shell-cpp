@@ -432,7 +432,7 @@ void main_loop(){
   std::string args[] = {};
   std::size_t job_number = 0;
   std::size_t *job_ptr = &job_number;
-  std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete", "jobs", "history"};
+  std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete", "jobs", "history", "declare"};
   rl_bind_key('\t', rl_complete);
   rl_bind_keyseq("\\e[A", custom_history_up);
   rl_bind_keyseq("\\e[B", custom_history_down); // Down arrow
