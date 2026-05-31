@@ -466,14 +466,28 @@ void main_loop(){
       while (i < arg.size()) {
         if (arg[i] == '$') {
           size_t j = i + 1;
-          while (j < arg.size() && (std::isalnum((unsigned char)arg[j]) || arg[j] == '_')) j++;
-          if (j > i + 1) {
-            std::string varname = arg.substr(i + 1, j - i - 1);
-            auto it = declare_map.find(varname);
-            if (it != declare_map.end()) expanded += it->second;
-            i = j;
+          if (j < arg.size() && arg[j] == '{') {
+            // ${VAR} syntax
+            size_t k = j + 1;
+            while (k < arg.size() && arg[k] != '}') k++;
+            if (k < arg.size()) {
+              std::string varname = arg.substr(j + 1, k - j - 1);
+              auto it = declare_map.find(varname);
+              if (it != declare_map.end()) expanded += it->second;
+              i = k + 1;
+            } else {
+              expanded += arg[i++];
+            }
           } else {
-            expanded += arg[i++];
+            while (j < arg.size() && (std::isalnum((unsigned char)arg[j]) || arg[j] == '_')) j++;
+            if (j > i + 1) {
+              std::string varname = arg.substr(i + 1, j - i - 1);
+              auto it = declare_map.find(varname);
+              if (it != declare_map.end()) expanded += it->second;
+              i = j;
+            } else {
+              expanded += arg[i++];
+            }
           }
         } else {
           expanded += arg[i++];
