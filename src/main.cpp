@@ -500,6 +500,7 @@ void main_loop(){
           while (std::getline(file, line)) {
               history.push_back(line);
           }
+          continue;
         }
         size_t startfrom = history.size();
         if (args.size() == 2){
