@@ -500,11 +500,12 @@ void main_loop(){
           while (std::getline(file, line)) {
               history.push_back(line);
           }
+          continue;
         }else if(args.size() > 2 && args.at(1) == "-w"){
           std::ofstream file(args.at(2).c_str(),std::ios::app);
           for (auto it = history.begin(); it != history.end(); it++)file << *it << "\n";
+          continue;
         }
-        continue;
         size_t startfrom = history.size();
         if (args.size() == 2){
           try { startfrom = std::stoi(args.at(1)); }
