@@ -13,6 +13,7 @@
 #include <array>
 #include <iomanip>
 #include <fstream>
+#include <algorithm>
 
 
 namespace fs = std::filesystem;
@@ -467,7 +468,6 @@ void main_loop(){
         if (arg[i] == '$') {
           size_t j = i + 1;
           if (j < arg.size() && arg[j] == '{') {
-            // ${VAR} syntax
             size_t k = j + 1;
             while (k < arg.size() && arg[k] != '}') k++;
             if (k < arg.size()) {
@@ -495,6 +495,8 @@ void main_loop(){
       }
       arg = expanded;
     }
+    args.erase(std::remove_if(args.begin() + 1, args.end(),
+      [](const std::string& s){ return s.empty(); }), args.end());
     for (auto it = args.begin(); it != args.end(); it++){
       if (*it == "|"){
         pipes.push_back(args_temp);
