@@ -20,6 +20,7 @@ namespace fs = std::filesystem;
 /** GLOBAL VARIABLE **/
 
 static std::map<std::string, std::string> complete_map;
+static std::map<std::string, std::string> declare_map;
 enum JobPosition {FIRST, SECOND, OTHER};
 static size_t history_index = 0;
 static size_t history_written = 0;
@@ -505,7 +506,12 @@ void main_loop(){
         for (auto it = history.begin(); it != history.end(); it++)file << *it << "\n";
         close(saved_stdout); close(saved_stderr);
         break;
-      } else if (first_command == "history") {
+      }else if (first_command == "declare") {
+        if (args.size() > 2 && args.at(1) == "-p"){
+          std::cout << "declare: " << args.at(2) << ": not found\n";
+          continue;
+          }
+      }else if (first_command == "history") {
         if (args.size() > 2 && args.at(1) == "-r"){
           std::ifstream file(args.at(2).c_str());
           std::string line;
