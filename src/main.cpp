@@ -461,12 +461,25 @@ void main_loop(){
     history.push_back(command);
     history_index = 0;
     for (auto& arg : args) {
-      if (!arg.empty() && arg[0] == '$') {
-        std::string varname = arg.substr(1);
-        auto it = declare_map.find(varname);
-        if (it != declare_map.end()) arg = it->second;
-        else arg = "";
+      std::string expanded;
+      size_t i = 0;
+      while (i < arg.size()) {
+        if (arg[i] == '$') {
+          size_t j = i + 1;
+          while (j < arg.size() && (std::isalnum((unsigned char)arg[j]) || arg[j] == '_')) j++;
+          if (j > i + 1) {
+            std::string varname = arg.substr(i + 1, j - i - 1);
+            auto it = declare_map.find(varname);
+            if (it != declare_map.end()) expanded += it->second;
+            i = j;
+          } else {
+            expanded += arg[i++];
+          }
+        } else {
+          expanded += arg[i++];
+        }
       }
+      arg = expanded;
     }
     for (auto it = args.begin(); it != args.end(); it++){
       if (*it == "|"){
