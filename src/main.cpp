@@ -561,9 +561,8 @@ void main_loop(){
             std::cout << fs::current_path().string() << "\n";
             exit(0);
           } else if (cmd == "type") {
-            std::vector<std::string> blts = {"exit","echo","type","pwd","complete","jobs"};
             std::string sub = seg[1];
-            if (is_string_included_in_array(blts, sub))
+            if (is_string_included_in_array(builtins, sub))
               std::cout << sub << " is a shell builtin\n";
             else if (std::string found = find_executable_in_path(sub); !found.empty())
               std::cout << sub << " is " << found << "\n";
