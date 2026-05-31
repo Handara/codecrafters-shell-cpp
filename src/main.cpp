@@ -502,6 +502,10 @@ void main_loop(){
           }
           continue;
         }else if(args.size() > 2 && args.at(1) == "-w"){
+          std::ofstream file(args.at(2).c_str());
+          for (auto it = history.begin(); it != history.end(); it++)file << *it << "\n";
+          continue;
+        }else if(args.size() > 2 && args.at(1) == "-a"){
           std::ofstream file(args.at(2).c_str(),std::ios::app);
           for (auto it = history.begin(); it != history.end(); it++)file << *it << "\n";
           continue;
