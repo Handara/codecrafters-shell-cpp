@@ -438,6 +438,15 @@ void main_loop(){
   rl_bind_keyseq("\\e[B", custom_history_down); // Down arrow
   std::vector<Jobs> jobsList;
   rl_attempted_completion_function = custom_auto_complete_function;
+  const char* histfile_env = std::getenv("HISTFILE");
+  if(histfile_env && *histfile_env){
+    std::ifstream file(histfile_env);
+    std::string line;
+    while (std::getline(file, line)) {
+        history.push_back(line);
+    }
+    history_written = history.size();
+  }
   while (true) {
     bool should_reap = true;
     char* input = readline("$ ");
