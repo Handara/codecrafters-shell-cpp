@@ -460,6 +460,14 @@ void main_loop(){
 
     history.push_back(command);
     history_index = 0;
+    for (auto& arg : args) {
+      if (!arg.empty() && arg[0] == '$') {
+        std::string varname = arg.substr(1);
+        auto it = declare_map.find(varname);
+        if (it != declare_map.end()) arg = it->second;
+        else arg = "";
+      }
+    }
     for (auto it = args.begin(); it != args.end(); it++){
       if (*it == "|"){
         pipes.push_back(args_temp);
