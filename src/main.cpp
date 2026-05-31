@@ -12,7 +12,7 @@
 #include <map>
 #include <array>
 #include <iomanip>
-
+#include <fstream>
 
 
 namespace fs = std::filesystem;
@@ -494,6 +494,13 @@ void main_loop(){
         close(saved_stdout); close(saved_stderr);
         break;
       } else if (first_command == "history") {
+        if (args.size() > 2 && args.at(1) == "-r"){
+          std::ifstream file(args.at(2).c_str());
+          std::string line;
+          while (std::getline(file, line)) {
+              history.push_back(line);
+          }
+        }
         size_t startfrom = history.size();
         if (args.size() == 2){
           try { startfrom = std::stoi(args.at(1)); }
