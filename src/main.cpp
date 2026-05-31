@@ -403,10 +403,20 @@ void reap_jobs(std::vector<Jobs>& jobsList, size_t &job_number, bool print_runni
   }
 }
 
-int custom_history(int count, int key){
+int custom_history_up(int count, int key){
    
   if (history_index >= history.size()) return 0;
-  size_t startfrom = history.size() - history_index++;
+  size_t startfrom = history.size() - ++history_index + 1;
+  rl_replace_line(history.at(startfrom - 1).c_str(), 0);
+  rl_point = 0;  
+  rl_redisplay(); 
+  return 0;
+}
+
+int custom_history_down(int count, int key){
+   
+  if (history_index <= 1) return 0;
+  size_t startfrom = history.size() - --history_index + 1;
   rl_replace_line(history.at(startfrom - 1).c_str(), 0);
   rl_point = 0;  
   rl_redisplay(); 
@@ -423,7 +433,8 @@ void main_loop(){
   std::size_t *job_ptr = &job_number;
   std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete", "jobs", "history"};
   rl_bind_key('\t', rl_complete);
-  rl_bind_keyseq("\\e[A", custom_history);
+  rl_bind_keyseq("\\e[A", custom_history_up);
+  rl_bind_keyseq("\\e[B", custom_history_down); // Down arrow
   std::vector<Jobs> jobsList;
   rl_attempted_completion_function = custom_auto_complete_function;
   while (true) {
