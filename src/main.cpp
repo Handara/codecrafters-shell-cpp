@@ -409,6 +409,7 @@ void main_loop(){
   std::size_t job_number = 0;
   std::size_t *job_ptr = &job_number;
   std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete", "jobs", "history"};
+  std::vector<std::string> history;
   rl_bind_key('\t', rl_complete);
   std::vector<Jobs> jobsList;
   rl_attempted_completion_function = custom_auto_complete_function;
@@ -421,6 +422,9 @@ void main_loop(){
     std::vector<std::vector<std::string>> pipes; 
     std::vector<std::string> args = parse_arguments(command);
     std::vector<std::string> args_temp;
+
+    history.push_back(command);
+    
     for (auto it = args.begin(); it != args.end(); it++){
       if (*it == "|"){
         pipes.push_back(args_temp);
@@ -464,6 +468,12 @@ void main_loop(){
       bool handled = true;
       if (first_command == "exit") {
         close(saved_stdout); close(saved_stderr);
+        break;
+      } else if (first_command == "history") {
+        size_t index = 1;
+        for (auto it = history.begin(); it != history.end();){
+          std::cout << index++ << " " << *it++ << "\n";
+        }
         break;
       } else if (first_command == "jobs") {
         reap_jobs(jobsList, job_number, true);
