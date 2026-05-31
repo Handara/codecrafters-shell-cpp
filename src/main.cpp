@@ -509,7 +509,7 @@ void main_loop(){
       }else if (first_command == "declare") {
         if (args.size() > 2 ){
           if (args.at(1) == "-p"){
-            if(declare_map.count(args.at(2))) std::cout << "declare -x " << args.at(2) << "=\"" << declare_map[args.at(2)] << "\"\n";
+            if(declare_map.count(args.at(2))) std::cout << "declare -- " << args.at(2) << "=\"" << declare_map[args.at(2)] << "\"\n";
             else std::cout << "declare: " << args.at(2) << ": not found\n";
             continue;
           }
