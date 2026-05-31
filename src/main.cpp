@@ -21,6 +21,8 @@ namespace fs = std::filesystem;
 
 static std::map<std::string, std::string> complete_map;
 enum JobPosition {FIRST, SECOND, OTHER};
+static size_t history_index = 0;
+static std::vector<std::string> history;
 
 /** CLASS **/
 struct Jobs
@@ -401,6 +403,16 @@ void reap_jobs(std::vector<Jobs>& jobsList, size_t &job_number, bool print_runni
   }
 }
 
+int custom_history(int count, int key){
+   
+  if (history_index >= history.size()) return 0;
+  size_t startfrom = history.size() - history_index++;
+  rl_replace_line(history.at(startfrom - 1).c_str(), 0);
+  rl_point = 0;  
+  rl_redisplay(); 
+  return 0;
+}
+
 /* MAIN LOOP */
 
 void main_loop(){
@@ -410,8 +422,8 @@ void main_loop(){
   std::size_t job_number = 0;
   std::size_t *job_ptr = &job_number;
   std::vector<std::string> builtins = {"exit","echo","type", "pwd", "complete", "jobs", "history"};
-  std::vector<std::string> history;
   rl_bind_key('\t', rl_complete);
+  rl_bind_keyseq("\\e[A", custom_history);
   std::vector<Jobs> jobsList;
   rl_attempted_completion_function = custom_auto_complete_function;
   while (true) {
@@ -425,7 +437,7 @@ void main_loop(){
     std::vector<std::string> args_temp;
 
     history.push_back(command);
-    
+    history_index = 0;
     for (auto it = args.begin(); it != args.end(); it++){
       if (*it == "|"){
         pipes.push_back(args_temp);
