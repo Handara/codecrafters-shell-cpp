@@ -471,7 +471,20 @@ void main_loop(){
         break;
       } else if (first_command == "history") {
         size_t index = 1;
-        for (auto it = history.begin(); it != history.end();){
+        size_t startfrom = 0;
+        if (args.size() == 2){
+          try
+          {
+            startfrom = std::stoi(args.at(1));
+            index += startfrom;
+          }
+          catch(const std::exception& e)
+          {
+            std::cerr << e.what() << '\n';
+          }
+          
+        }
+        for (auto it = history.end() - startfrom; it != history.end();){
           std::cout << index++ << " " << *it++ << "\n";
         }
       } else if (first_command == "jobs") {
